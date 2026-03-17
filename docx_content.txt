@@ -1,0 +1,279 @@
+Vamos usar como referência o modelo de PUBLICAÇÃO dos imóveis que aparecem no link do site abaixo 
+
+https://achaimoveis.net/imovel/3230
+Teremos as seguintes alterações
+
+0 – SEO
+Aqui segue algumas instruções de grande importância para os resultados de busca.
+
+0.1 - LINK PERMANENTE
+Hoje o link de acesso a página do imóvel está desta forma
+https://imoveisdacaixa.com.br/antigravity/index.php/2026/03/06/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234/
+MAIS DEPOIS DE TUDO PRONTO 
+Já no domínio principal é para ficar deste jeito
+https://imoveisdacaixa.com.br/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234/
+Tipo do imóvel + Bairro + Cidade + UF + Número do imóvel
+
+– IMAGENS DESTAQUE
+Vamos duplicar a mesma a imagem ‘ImagemDestaque.jpg’, renomeando a cópia para o mesmo nome do título do post e vamos utilizar ela como imagem destaque do post
+
+Hoje a imagem destaque do post está gavada no seguinte endereço:
+https://imoveisdacaixa.com.br/antigravity/wp-content/uploads/2026/03/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234.jpg
+
+Mas ela deve estar gravada na pasta (imagens / destaque)
+https://imoveisdacaixa.com.br/antigravity/imagens/destaque/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234.jpg
+
+MUITO IMPORTANTE
+Esta imagem só aparece no compartilhamento do link do post com outras pessoas e hoje ela aparece na página principal
+
+DESCRIÇÃO
+Este texto é a descrição do post que vai junto ao compartilhamento do link.
+Segue modelo de Descrição a ser utilizado:
+“Tipo do imóvel + Bairro + Cidade + UF + Número do imóvel. Aproveite o desconto de (valor do desconto em reais). Clique Aqui para mais informações.”
+
+PALAVRA CHAVE DO FOCO
+Vamos usar uma frase inteira como palavra chave:
+“Tipo do imóvel + Bairro + Cidade + UF + Número do imóvel”
+
+
+1 – TÍTULO (H1)
+O Título será um Emoji + o texto utilizado no link de acesso da página 
+Emoji + (Tipo do imóvel + Bairro + Cidade + UF + Número do imóvel)
+Colocamos o emoji no início para dar destaque no resultado de busca
+
+2 – IMAGEM DO IMÓVEL 
+Galeria de fotos grandes no topo. (retirar as informações de valor mínimo e de valor de avaliação do rodapé da imagem
+Hoje a imagem está no seguinte endereço:https://imoveisdacaixa.com.br/antigravity/index.php/2026/03/06/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234/
+
+Mas ela deve estar na pasta de imagens / imoveis:
+https://imoveisdacaixa.com.br/antigravity/imagens/imoveis/apartamento-jardim-esperanca-cabo-frio-rj-8787710693234/
+
+MUITO IMPORTANTE
+Alguns imóveis poderão ter mais de uma imagem e nestes casos basta incluir um campo do tipo “-2” onde o 2 representa o número da segunda foto do mesmo imóvel, o 3 da terceira foto, e assim sucessivamente
+apartamento-jardim-esperanca-cabo-frio-rj-8787710693234/
+apartamento-jardim-esperanca-cabo-frio-rj-8787710693234-2/
+apartamento-jardim-esperanca-cabo-frio-rj-8787710693234-3/
+apartamento-jardim-esperanca-cabo-frio-rj-8787710693234-4/
+
+3 – LUCRO (H2)
+(H3) Lucro Imobiliário
+(aqui entra o valor do desconto em R$)
+(H3) Valor da avaliação:
+R$ 121.000,00
+(H3) Valor mínimo:
+R$ 69.361,21
+(H3) Desconto de: 
+(aqui entra o valor do desconto em %)
+Tenho interesse
+(Clicando neste botão a página desce até o campo formulário – Link âncora))
+Compartilhar
+(Clicando neste botão o visitante pode compartilhar este link por onde preferir)
+WhatsApp(Clicando neste botão abre uma chamada igual a que abre no botão da imagem de chamada para conversa pelo WhatsApp que fica ao final desta página – “Ola! Tenho interesse no imóvel da Caixa *8787702384821* localizado em *Centro* - *BELFORD ROXO-RJ*” onde 8787702384821 é o número do imóvel da página e *Bairro* - *Municipio/Cidade*
+
+As informações abaixo não devem aparecer neste local, elas serão incluídas no Rodapé das páginas do site
+Imóveis da Caixa LTDA
+CNPJ: 50.563.863/0001-45
+CRECI-PJ: 10.234/RJ
+
+OBSERVAÇÕES:
+Coloque os ícones e cores cada item que sejam referentes a informação de cada campo
+Lucro Imobiliário – deve ter o maior destaque possível, este é o principal desejo do leitor
+
+4 – ATUALIZAÇÃO (H2)
+(Data + “Texto = ao título” + endereço) (1 por linha)
+Exemplo:
+Ultima atualização: 05/03/2026 00:03
+Casa em pqindustrial mingone, luziania - GO
+quadra 104 lote c rua 42,n. sn cs 01, pqindustrial mingone - cep: 72851-779, luziania – goias
+
+5 – IMÓVEL (H2)
+Sobre o Imóvel (Quadro (box) 
+Vamos manter este quadro, só vamos editar o posicionamento e a organização das informações, algumas informações que aparecem no formato abaixo serão capturadas pelo sistema na página original de publicação deste imóvel dentro do site da caixa.
+
+modalide de venda
+tipo do imóvel, quartos, área privativa, área total
+descrição
+regras de pagamento (Financiamento – FGTS - Consórcio)
+número do imóvel – matricula – 
+Inscrição imobiliária, Comarca, Ofício,Averbação dos leilões negativos
+
+OBSERVAÇÕES
+regras de pagamento (Financiamento – FGTS - Consórcio)
+Financiamento = SIM ou NÃO de acordo com o que estiver no banco de dados
+FGTS = SIM ou NÃO de acordo com o que estiver no banco de dadosConsórcio = Sempre não – é uma pergunta recorrente dos interessados
+
+MUITA ATENÇÃO COM O ITEN 6
+
+6 – INVESTIDORES (H2)
+Cálculos do investidor
+Muita atenção nesta hora, vamos falar sobre algo sensível para o nosso sucesso
+Leia todo o passo a passos primeiro antes de começar a executar
+Neste momento o leitor vai poder se cadastrar
+
+1 - Aqui vai aparecer apenas um botão em destaque com uma chamada do tipo “Ver cálculos do Investimento”
+
+– Abre um formulário com Nome – E-mail – WhatsApp – mensagem de notificação avisando que por motivo de segurança é necessário o preenchimento do formulário
+EXEMPLO DE MENSAGEM:
+De acordo com as leis de proteção a informação é preciso que o visitante se torne um membro para ter acesso a funcionalidades avançadas. O registro na plataforma habilita o acesso integral às nossas ferramentas de análise e monitoramento. A adesão é isenta de custos e oferece os seguintes recursos:
+
+Funcionalidades Exclusivas para Membros
+Monitoramento Abrangente: Acesso controlado ao inventário completo de ativos atualizados.
+Refinamento Estratégico: Filtros de alta precisão para segmentação por localização, faixa de valor e modalidade de leilão.
+Informativos Customizados: Notificações direcionadas sobre novas oportunidades alinhadas ao seu perfil de investimento.
+Previsão de lucratividade: com base em nosso conhecimento a nas experiências de nossos alunos, criamos uma tabela de previsão de valores da operação.
+
+2.1 - leitor envia o formulário
+2.2 - abre uma caixa para o leitor:
+Nesta caixa se abrem dois campos:
+2.2.3 Um campo informando que foi enviada uma senha para o e-mail e para o WhatsApp pedindo para ser informada na caixa abaixo.
+2.2.4 Abre uma caixa para receber a senha
+2.2.5 vamos enviar uma senha para o e-mail
+2.2.6 vamos enviar uma senha para o WhatsApp
+
+3 – Ao colocar a senha que foi enviado por E-mail e pelo WhatsApp
+O leitor informa qualquer uma das senhas, a página é recarregada e o Quadro Box com as informações restritas passam a ser visualizadas
+
+4– Confirma recebimento
+O sistema se conecta ao Google Gmail, envia e-mail de aviso de cadastro e grava na agenda de contatos da empresa com o marcador “NOVOS”. A empresa envia e-mail de boas vindas e no WhatsApp a pessoa recebe o contato do especialista.
+
+
+OBSERVAÇÔES
+a senha que vai para o e-mail e a outra que vai para o WhatsApp serão diferentes para que possamos identificar qual o formato de autenticação é mais utilizado
+
+Também vamos precisar saber o número de pessoas que apenas entraram no formulário; da pessoas que entraram e preencheram e os que validaram
+
+
+MUITA ATENÇÃO
+Os itens 7, 8 e 9 serão capturados das páginas originais do imóvel que está gravada no site da caixa
+
+Para acessar a página original do imóvel basta acessar o link abaixo acrescentando o número do imóvel depois do sinal de igual, segue exemplos
+https://venda-imoveis.caixa.gov.br/sistema/detalheimovel.asp?hdnOrigem=index&hdnimovel=
+
+https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnOrigem=index&hdnimovel=08787709142793
+
+https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnOrigem=index&hdnimovel=8021970013716
+https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnOrigem=index&hdnimovel=1444402960230
+
+
+7 – PAGAMENTOS (H2)
+FORMAS DE PAGAMENTO ACEITASRecursos próprios.Permite financiamento - somente SBPE. Consulte condições antes de efetuar a proposta.
+
+8 – DESPESAS (H2)
+REGRAS PARA PAGAMENTO DAS DESPESAS (caso existam):
+Nos dias de hoje, você vai encontrar esta mesma informação em todos os imóveis anunciados, porém esta informação poderá ser alterada a qualquer momentoCondomínio: Sob responsabilidade do comprador, até o limite de 10% em relação ao valor de avaliação do imóvel. A CAIXA realizará o pagamento apenas do valor que exceder o limite de 10% do valor de avaliação.
+Tributos: Sob responsabilidade do comprador.
+
+9 – ADICIONAIS (H2)
+É o texto com informações adicionais que aparece abaixo das informações sobre as despesas
+Imóvel com gravame/penhora/indisponibilidade averbada na matrícula.Regularização por conta do adquirente.
+Segue o link de um imóvel que possui estas informações adicionais
+https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnOrigem=index&hdnimovel=1444402960230
+
+
+
+10 - DÚVIDAS FREQUENTES (H2)
+https://imoveisdacaixa.com.br/casa-a-venda-em-jacarepagua-no-rio-de-janeiro-rj-1555530630855/
+Acesse o link e copie o mesmo conteúdo no modelo sanfona, se possível mantenha todas as abas fechadas para que os leitores tenham que clicar par abrir cada conteúdo de forma expansível.
+
+
+11 – LOCALIZAÇÃO (H2)
+DUAS COLUNAS conforme orientação abaixoCOLUNA ESQUERDA
+Endereço
+rua guapimirim,n. 400 cs 17, vila valqueire - cep: 21321-490, rio de janeiro - rio de janeiro
+Cidade
+rio de janeiro
+Estado
+rio de janeiro
+Bairro
+vila Valqueire
+Botão “Ver no Mapa” abre uma nova página do Google com a localização do imóvel
+
+COLUNA DIREITA
+Carrega o mapa do endereço
+
+12 – CONTATO (H2)
+Aqui aparece o formulário de contato
+https://imoveisdacaixa.com.br/casa-a-venda-em-jacarepagua-no-rio-de-janeiro-rj-1555530630855/
+Acesse o link e copie o mesmo conteúdo do formulário existente, inclusive vamos utilizar a re-captcha
+ao enviar o formulário o leitor:
+12.1 É direcionado para uma página de confirmação de recebimento (cadastro-confirmado)
+12.2 Nesta página ele recebe uma confirmação de recebimento do formulário e a notificação que um de nossos colaboradores vai entrar em contato.
+12.3 Ele é redirecionado para a página do imóvel que ele estava visualizando, porém o formulário não aparece mais habilitado para ele.
+
+13 – SEMELHANTES (H2)
+Vão aparecer apenas 3 novas opções de imóveis semelhantes seguindo como critério de semelhança a seguinte regra:
+Mesmo bairro
+Mesmo Tipo do imóvel
+Valor de venda semelhante ao valor do imóvel de referência
+
+14 – HISTÓRICO (H2)
+Vamos criar uma tabela com as datas de atualizações e seus históricos, uma por linha
+Atualização (data) + Valor de venda (R$) + Financiamento (S/N) + FGTS (S/N) + Desconto em R$
+
+15 – WHATSAPP (H2)
+Imagem do atendente que será usada como Botão WhatsApp. Ao clicar na imagem iniciaremos o atendimento com a seguinte mensagem: “. 📌 Olá! Tenho interesse no imóvel da Caixa *8787702384821* localizado em *Centro* - *BELFORD ROXO-RJ*” onde 8787702384821 é o número do imóvel da página e *Bairro*- *Municipio/Cidade*
+
+
+
+AJUSTES QUE SERÃO FEITOS APÓS O NOVO SITER TER SIDO PUBLICADO NO DOMÍNIO PRINCIPAL DO SITE
+
+
+1 - ORGANIZAÇÃO DE MARCADORES
+H1 – H2 – H3 – H4
+
+Hoje está assim:
+
+Untitled BODY
+Untitled NAV
+Apartamento JARDIM ESPERANCA CABO FRIO RJ 8787710693234
+Apartamento JARDIM ESPERANCA CABO FRIO RJ 8787710693234
+Apartamento JARDIM ESPERANCA CABO FRIO RJ 8787710693234 sendo vendido com R$ 84.597,39 de desconto. Saiba Mais
+Detalhes e Características
+Descricao do Imovel
+Untitled NAV
+Comentários
+Deixe um comentário Cancelar resposta
+Mais posts
+Apartamento JARDIM ESPERANCA CABO FRIO RJ 8787710693234
+Apartamento LOT MONTE CARLO CABO FRIO RJ 8787703036363
+Apartamento SAO VICENTE BELFORD ROXO RJ 1787701674933
+Apartamento CENTRO BELFORD ROXO RJ 8444416113320
+Imóveis da Caixa
+Untitled NAV
+Untitled NAV
+
+
+Organize para que fique no seguinte formato
+
+Título
+Descrição
+Imagem
+Foto do Imóvel
+Quadro de Informações
+Valores
+Agendamento de Contato
+WhatsApp
+Compartilhamento
+Atualização
+Sobre o Imóvel
+Cálculos do investidor
+Pagamentos
+Despesas
+Observações
+Dúvidas Frequentes
+PAGAMENTOS
+DESPESAS
+OBSERVAÇÕES
+DÚVIDAS FREQUENTES
+LOCALIZAÇÃO
+IMOVEIS SEMELHANTES
+HISTÓRICO
+TREINAMENTO
+BLOG
+WHATSAPP
+
+
+
+
+2 – GOOGLE CONSOLE
+também vamos precisar nos conectrar ao Google Console, para que ele seja informado da publicação da nova página e quando a pégina tenha recebido alguma alteração.ja deixe esta configuração feita, porém só vamos afeturar

@@ -1,0 +1,6 @@
+pandas
+fuzzywuzzy
+python-Levenshtein
+unidecode
+supabase
+python-dotenv

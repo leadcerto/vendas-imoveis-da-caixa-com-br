@@ -1,0 +1,975 @@
+{
+  "total_variantes": 807,
+  "grupos_identificados": 79,
+  "grupos": [
+    {
+      "principal": "CENTRO (SAO VICENTE) ",
+      "variantes": [
+        {
+          "nome": "MONTEIRO (SAO VICENTE) ",
+          "similarity": 86,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "Jacaré ",
+      "variantes": [
+        {
+          "nome": "JACARE ",
+          "similarity": 100,
+          "count": 6
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "SAO VICENTE ",
+      "variantes": [
+        {
+          "nome": "LOTEAMENTO SAO VICENTE ",
+          "similarity": 100,
+          "count": 1
+        },
+        {
+          "nome": "PARQUE SAO VICENTE ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 116
+    },
+    {
+      "principal": "AREAL ",
+      "variantes": [
+        {
+          "nome": "PARQUE REAL ",
+          "similarity": 89,
+          "count": 1
+        }
+      ],
+      "count": 13
+    },
+    {
+      "principal": "FIGUEIRA ",
+      "variantes": [
+        {
+          "nome": "FIGUEIRAS ",
+          "similarity": 94,
+          "count": 8
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "BARRO VERMELHO ",
+      "variantes": [
+        {
+          "nome": "RIO VERMELHO ",
+          "similarity": 85,
+          "count": 1
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "AREIA BRANCA ",
+      "variantes": [
+        {
+          "nome": "PARQUE BAIA BRANCA ",
+          "similarity": 87,
+          "count": 1
+        }
+      ],
+      "count": 23
+    },
+    {
+      "principal": "SHANGRI-LA ",
+      "variantes": [
+        {
+          "nome": "JD SHANGRI-LA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "SAO JORGE ",
+      "variantes": [
+        {
+          "nome": "JD SAO JORGE ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "LOT MONTE CARLO ",
+      "variantes": [
+        {
+          "nome": "MONTE CARLO ",
+          "similarity": 100,
+          "count": 4
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "JARDIM ESPERANCA ",
+      "variantes": [
+        {
+          "nome": "ESPERANCA ",
+          "similarity": 100,
+          "count": 208
+        },
+        {
+          "nome": "ESPERANÇA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 21
+    },
+    {
+      "principal": "CENTRO PAPUCAIA ",
+      "variantes": [
+        {
+          "nome": "CENTRO (PAPUCAIA) ",
+          "similarity": 94,
+          "count": 2
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "VENEZA ",
+      "variantes": [
+        {
+          "nome": "LOTEAMENTO VENEZA ",
+          "similarity": 100,
+          "count": 1
+        },
+        {
+          "nome": "RESIDENCIAL VENEZA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "BOA VISTA ",
+      "variantes": [
+        {
+          "nome": "PARQUE BOA VISTA ",
+          "similarity": 100,
+          "count": 3
+        }
+      ],
+      "count": 34
+    },
+    {
+      "principal": "PARQUE JOQUEI CLUB ",
+      "variantes": [
+        {
+          "nome": "JOQUEI CLUBE ",
+          "similarity": 96,
+          "count": 29
+        }
+      ],
+      "count": 19
+    },
+    {
+      "principal": "VIVENDAS DO COQUEIRO IV ",
+      "variantes": [
+        {
+          "nome": "VIVENDAS DO COQUEIRO III ",
+          "similarity": 94,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "PARQUE CALIFORNIA ",
+      "variantes": [
+        {
+          "nome": "CALIFORNIA ",
+          "similarity": 100,
+          "count": 4
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "CAMPOS DOS GOYTACAZE ",
+      "variantes": [
+        {
+          "nome": "CAMPOS GOYTACAZES ",
+          "similarity": 86,
+          "count": 2
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "GOITACAZES ",
+      "variantes": [
+        {
+          "nome": "GOYTACAZES ",
+          "similarity": 90,
+          "count": 3
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "FLAMBOYANT II ",
+      "variantes": [
+        {
+          "nome": "PARQUE FLAMBOYANT ",
+          "similarity": 87,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "2 DISTRITO ",
+      "variantes": [
+        {
+          "nome": "6 DISTRITO ",
+          "similarity": 90,
+          "count": 1
+        },
+        {
+          "nome": "3º DISTRITO ",
+          "similarity": 86,
+          "count": 3
+        },
+        {
+          "nome": "1 DISTRITO ",
+          "similarity": 90,
+          "count": 1
+        },
+        {
+          "nome": "5 DISTRITO ",
+          "similarity": 90,
+          "count": 1
+        },
+        {
+          "nome": "1º DISTRITO ",
+          "similarity": 86,
+          "count": 1
+        },
+        {
+          "nome": "3 DISTRITO ",
+          "similarity": 90,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "JARDIM DAS ACACIAS ",
+      "variantes": [
+        {
+          "nome": "JD DAS ACACIAS ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "PARQUE PENHA ",
+      "variantes": [
+        {
+          "nome": "PENHA ",
+          "similarity": 100,
+          "count": 12
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "PARQUE IMPERIAL ",
+      "variantes": [
+        {
+          "nome": "JARDIM IMPERIAL ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "PARQUE SANTO AMARO ",
+      "variantes": [
+        {
+          "nome": "JARDIM SANTO AMARO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "PARQUE ROSARIO ",
+      "variantes": [
+        {
+          "nome": "JARDIM ROSARIO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 21
+    },
+    {
+      "principal": "PARQUE BELA VISTA ",
+      "variantes": [
+        {
+          "nome": "BELA VISTA ",
+          "similarity": 100,
+          "count": 41
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "CHACARAS RIO-PETROPOLIS ",
+      "variantes": [
+        {
+          "nome": "CHACARAS RIO PETROPO ",
+          "similarity": 88,
+          "count": 1
+        },
+        {
+          "nome": "CHACARAS RIOPETROPOL ",
+          "similarity": 93,
+          "count": 1
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "JARDIM PRIMAVERA ",
+      "variantes": [
+        {
+          "nome": "PARQUE PRIMAVERA ",
+          "similarity": 100,
+          "count": 16
+        },
+        {
+          "nome": "JARDIM PRIMAVERA I ",
+          "similarity": 90,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "JARDIM GRAMACHO ",
+      "variantes": [
+        {
+          "nome": "GRAMACHO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 19
+    },
+    {
+      "principal": "BARRO BRANCO ",
+      "variantes": [
+        {
+          "nome": "JARDIM BARRO BRANCO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 18
+    },
+    {
+      "principal": "PARQUE DUQUE ",
+      "variantes": [
+        {
+          "nome": "DUQUES ",
+          "similarity": 91,
+          "count": 2
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "PARQUE ALVORADA ",
+      "variantes": [
+        {
+          "nome": "JARDIM ALVORADA ",
+          "similarity": 100,
+          "count": 12
+        },
+        {
+          "nome": "ALVORADA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "MORADA DO SOL I (ITAMBI) ",
+      "variantes": [
+        {
+          "nome": "MORADA DO SOL ITAMBI ",
+          "similarity": 91,
+          "count": 1
+        }
+      ],
+      "count": 9
+    },
+    {
+      "principal": "MARAMBAIA (MANILHA) ",
+      "variantes": [
+        {
+          "nome": "MARAMBAIA MANILHA ",
+          "similarity": 94,
+          "count": 4
+        }
+      ],
+      "count": 14
+    },
+    {
+      "principal": "MONTE VERDE MANILHA ",
+      "variantes": [
+        {
+          "nome": "MONTE VERDE (MANILHA) ",
+          "similarity": 95,
+          "count": 5
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "CABUCU ",
+      "variantes": [
+        {
+          "nome": "CABUÇU ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 231
+    },
+    {
+      "principal": "GEBARA (ITAMBI) ",
+      "variantes": [
+        {
+          "nome": "GEBARA ITAMBI ",
+          "similarity": 93,
+          "count": 2
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "VENDA DAS PEDRAS ",
+      "variantes": [
+        {
+          "nome": "VENDAS DAS PEDRAS ",
+          "similarity": 97,
+          "count": 1
+        }
+      ],
+      "count": 36
+    },
+    {
+      "principal": "VILA BRASIL (MANILHA) ",
+      "variantes": [
+        {
+          "nome": "VILA GABRIELA (MANILHA) ",
+          "similarity": 86,
+          "count": 3
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "N. HORIZONTE MANIL ",
+      "variantes": [
+        {
+          "nome": "NOVO HORIZONTE MANIL ",
+          "similarity": 89,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "SANTO ANTONIO ",
+      "variantes": [
+        {
+          "nome": "JD SANTO ANTONIO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "JD ITAMARATI ",
+      "variantes": [
+        {
+          "nome": " ITAMARATI ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "NOSSA SENHORA DE FAT ",
+      "variantes": [
+        {
+          "nome": "NOSSA SENHORA DE FATIMA ",
+          "similarity": 93,
+          "count": 2
+        },
+        {
+          "nome": "NOSSA SENHORA DA PAZ ",
+          "similarity": 85,
+          "count": 1
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "CENTRO CABUCU ",
+      "variantes": [
+        {
+          "nome": "CENTRO (CABUCU) ",
+          "similarity": 93,
+          "count": 3
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "LOT PARTE NORTE DA F ",
+      "variantes": [
+        {
+          "nome": "PARTE NORTE DA FAZEN ",
+          "similarity": 89,
+          "count": 3
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "SAO JOSE ",
+      "variantes": [
+        {
+          "nome": "SÃO JOSE ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "ITAOCARA ",
+      "variantes": [
+        {
+          "nome": "ITAOCA ",
+          "similarity": 86,
+          "count": 2
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "LOT RES VALE VERDE ",
+      "variantes": [
+        {
+          "nome": "RES VALE VERDE ",
+          "similarity": 100,
+          "count": 1
+        },
+        {
+          "nome": "VALVERDE ",
+          "similarity": 89,
+          "count": 12
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "PARQUE ATLANTICO ",
+      "variantes": [
+        {
+          "nome": "LOT JARDIM ATLANTICO ",
+          "similarity": 100,
+          "count": 1
+        },
+        {
+          "nome": "JARDIM ATLANTICO ",
+          "similarity": 100,
+          "count": 2
+        },
+        {
+          "nome": "ATLANTICA ",
+          "similarity": 89,
+          "count": 2
+        }
+      ],
+      "count": 8
+    },
+    {
+      "principal": "JARDIM DA PAZ GUIA D ",
+      "variantes": [
+        {
+          "nome": "JD DA PAZ GUIA DE PA ",
+          "similarity": 87,
+          "count": 1
+        }
+      ],
+      "count": 10
+    },
+    {
+      "principal": "IPIRANGA (GUIA DE PACOBAIBA) ",
+      "variantes": [
+        {
+          "nome": "BAIA BRANCA (GUIA DE PACOBAIBA) ",
+          "similarity": 85,
+          "count": 1
+        }
+      ],
+      "count": 14
+    },
+    {
+      "principal": "JARDIM DA PAZ ",
+      "variantes": [
+        {
+          "nome": "JD DA PAZ ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "PRAIA DO ANIL (GUIA DE PACOBAIBA) ",
+      "variantes": [
+        {
+          "nome": "PRAIA DO IMPERADOR (GUIA DE PACOBAIBA) ",
+          "similarity": 85,
+          "count": 1
+        },
+        {
+          "nome": "PRAIA DE OLARIA (GUIA DE PACOBAIBA) ",
+          "similarity": 88,
+          "count": 3
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "MARAPICU ",
+      "variantes": [
+        {
+          "nome": "PARQUE MARAPICU I ",
+          "similarity": 89,
+          "count": 1
+        }
+      ],
+      "count": 45
+    },
+    {
+      "principal": "SANTA RITA ",
+      "variantes": [
+        {
+          "nome": "JARDIM SANTA MARIA ",
+          "similarity": 86,
+          "count": 2
+        },
+        {
+          "nome": "SANTA ANITA ",
+          "similarity": 86,
+          "count": 1
+        }
+      ],
+      "count": 19
+    },
+    {
+      "principal": "JARDIM QUEIMADOS ",
+      "variantes": [
+        {
+          "nome": "QUEIMADOS ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "LOT EXT DO SERRAMAR ",
+      "variantes": [
+        {
+          "nome": "LOTEAMENTO EXTENSAO DO SERRAMAR ",
+          "similarity": 86,
+          "count": 2
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "ANCHIETA ",
+      "variantes": [
+        {
+          "nome": "PARQUE ANCHIETA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 161
+    },
+    {
+      "principal": "FREGUESIA JACAREPAGU ",
+      "variantes": [
+        {
+          "nome": "FREGUESIA (JACAREPAGUA) ",
+          "similarity": 93,
+          "count": 22
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "FREG JACAREPAGUA ",
+      "variantes": [
+        {
+          "nome": "FREG DE JACAREPAGUA ",
+          "similarity": 91,
+          "count": 4
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "FREG DE CAMPO GRANDE ",
+      "variantes": [
+        {
+          "nome": "FRE DE CAMPO GRANDE ",
+          "similarity": 97,
+          "count": 2
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "JACAREPAGUA ",
+      "variantes": [
+        {
+          "nome": "JACARAPAGUÁ ",
+          "similarity": 91,
+          "count": 1
+        }
+      ],
+      "count": 20
+    },
+    {
+      "principal": "N SRA DA AJUDA ",
+      "variantes": [
+        {
+          "nome": "NOSSA SRA DA AJUDA ",
+          "similarity": 88,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "FREGUESIA GUARATIBA ",
+      "variantes": [
+        {
+          "nome": "FREG GUARATIBA ",
+          "similarity": 85,
+          "count": 1
+        },
+        {
+          "nome": "FREGUESIA DE GUARATI ",
+          "similarity": 87,
+          "count": 1
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "JARDIM CATARINA ",
+      "variantes": [
+        {
+          "nome": "LOT JARDIM CATARINA ",
+          "similarity": 100,
+          "count": 3
+        },
+        {
+          "nome": "LOT JD CATARINA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 388
+    },
+    {
+      "principal": "JARDIM INDEPENDENCIA ",
+      "variantes": [
+        {
+          "nome": "LOT JD INDEPENDENCIA ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 15
+    },
+    {
+      "principal": "PORTO DO ROSA ",
+      "variantes": [
+        {
+          "nome": "PORTAO DO ROSA ",
+          "similarity": 96,
+          "count": 2
+        }
+      ],
+      "count": 23
+    },
+    {
+      "principal": "IPIIBA ",
+      "variantes": [
+        {
+          "nome": "IPIBA ",
+          "similarity": 91,
+          "count": 1
+        }
+      ],
+      "count": 20
+    },
+    {
+      "principal": "VILA LAGE ",
+      "variantes": [
+        {
+          "nome": "VILA LAGE I ",
+          "similarity": 90,
+          "count": 1
+        }
+      ],
+      "count": 45
+    },
+    {
+      "principal": "JARDIM NOVA REPUBLIC ",
+      "variantes": [
+        {
+          "nome": "JARDIM NOVA REPUBLICA ",
+          "similarity": 96,
+          "count": 11
+        }
+      ],
+      "count": 1
+    },
+    {
+      "principal": "PARAISO ",
+      "variantes": [
+        {
+          "nome": "JARDIM PARAISO ",
+          "similarity": 100,
+          "count": 1
+        }
+      ],
+      "count": 11
+    },
+    {
+      "principal": "PORTO VELHO ",
+      "variantes": [
+        {
+          "nome": "PORTAO VERMELHO ",
+          "similarity": 85,
+          "count": 1
+        }
+      ],
+      "count": 5
+    },
+    {
+      "principal": "NEVES NEVES ",
+      "variantes": [
+        {
+          "nome": "NEVES (NEVES) ",
+          "similarity": 92,
+          "count": 56
+        }
+      ],
+      "count": 3
+    },
+    {
+      "principal": "JARDIM ALCANTARA ",
+      "variantes": [
+        {
+          "nome": "ALCANTARA ",
+          "similarity": 100,
+          "count": 9
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "JD N SRA AUXILIADORA ",
+      "variantes": [
+        {
+          "nome": "JD N S AUXILIADORA ",
+          "similarity": 94,
+          "count": 4
+        }
+      ],
+      "count": 9
+    },
+    {
+      "principal": "FAZENDA RESTAURADA ",
+      "variantes": [
+        {
+          "nome": "LOT FAZ RESTAURADA ",
+          "similarity": 88,
+          "count": 6
+        }
+      ],
+      "count": 4
+    },
+    {
+      "principal": "SAO MATEUS ",
+      "variantes": [
+        {
+          "nome": "SAO MATHEUS ",
+          "similarity": 95,
+          "count": 1
+        }
+      ],
+      "count": 2
+    },
+    {
+      "principal": "BANDEIRANTES I ",
+      "variantes": [
+        {
+          "nome": "BANDEIRANTES II ",
+          "similarity": 97,
+          "count": 1
+        },
+        {
+          "nome": "BANDEIRANTES ",
+          "similarity": 92,
+          "count": 1
+        }
+      ],
+      "count": 2
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./web
+    container_name: i-caixa-web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - CLIENT_EMAIL=icaixa.001@gmail.com
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_KEY}
+    stdin_open: true
+    tty: true
+
+  automation:
+    build: ./automation
+    container_name: i-caixa-automation
+    volumes:
+      - ./automation:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - CLIENT_EMAIL=icaixa.001@gmail.com
+    stdin_open: true
+    tty: true

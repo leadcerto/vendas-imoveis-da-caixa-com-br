@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0b;
+  --foreground: #ffffff;
+  
+  /* Caixa Econômica Color Palette */
+  --caixa-azul: #003D7A;
+  --caixa-azul-brilhante: #0056b3;
+  --caixa-amarelo: #FDB913;
+  --cor-sucesso: #28A745;
+  --cor-destaque: #FF6B35;
+  --cor-aviso: #FFC107;
+  --cor-texto: #333333;
+  --cor-texto-claro: #777777;
+  --cor-fundo: #F8F9FA;
+  --cor-borda: #334155;
+  
+  /* Typography */
+  --font-sans: var(--font-roboto), system-ui, sans-serif;
+  --font-heading: var(--font-montserrat), sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 40px;
+  --spacing-xl: 60px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* Custom Scrollbar for Premium Feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+.gradient-lucro {
+  background: linear-gradient(135deg, #28A745 0%, #FDB913 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-lucro::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+  animation: rotate 6s linear infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s infinite ease-in-out;
+}
+
+.animate-float {
+  animation: float 6s infinite ease-in-out;
+}
+
+.animate-shine {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shine 3s infinite;
+}
+
+@keyframes pulse-soft {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Accordion Specific */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out, padding 0.4s ease;
+}
+
+.accordion-item.active .accordion-content {
+  max-height: 500px;
+  padding-bottom: 24px;
+}
+
+.bloco-container {
+  @apply space-y-20 py-20;
+}
+
+.section-title {
+  @apply text-2xl md:text-3xl font-black mb-10 flex items-center justify-center gap-3 text-center;
+}

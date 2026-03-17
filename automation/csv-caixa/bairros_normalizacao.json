@@ -1,0 +1,500 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-03-11T10:25:54.147477",
+  "mappings": {
+    "CENTRO (SAO VICENTE) ": {
+      "normalized": "CENTRO (SAO VICENTE) ",
+      "variants": [
+        "MONTEIRO (SAO VICENTE) "
+      ]
+    },
+    "JACARÉ ": {
+      "normalized": "Jacaré ",
+      "variants": [
+        "JACARE "
+      ]
+    },
+    "SAO VICENTE ": {
+      "normalized": "SAO VICENTE ",
+      "variants": [
+        "LOTEAMENTO SAO VICENTE ",
+        "PARQUE SAO VICENTE "
+      ]
+    },
+    "AREAL ": {
+      "normalized": "AREAL ",
+      "variants": [
+        "PARQUE REAL "
+      ]
+    },
+    "FIGUEIRA ": {
+      "normalized": "FIGUEIRA ",
+      "variants": [
+        "FIGUEIRAS "
+      ]
+    },
+    "BARRO VERMELHO ": {
+      "normalized": "BARRO VERMELHO ",
+      "variants": [
+        "RIO VERMELHO "
+      ]
+    },
+    "AREIA BRANCA ": {
+      "normalized": "AREIA BRANCA ",
+      "variants": [
+        "PARQUE BAIA BRANCA "
+      ]
+    },
+    "SHANGRI-LA ": {
+      "normalized": "SHANGRI-LA ",
+      "variants": [
+        "JD SHANGRI-LA "
+      ]
+    },
+    "SAO JORGE ": {
+      "normalized": "SAO JORGE ",
+      "variants": [
+        "JD SAO JORGE "
+      ]
+    },
+    "LOT MONTE CARLO ": {
+      "normalized": "LOT MONTE CARLO ",
+      "variants": [
+        "MONTE CARLO "
+      ]
+    },
+    "JARDIM ESPERANCA ": {
+      "normalized": "JARDIM ESPERANCA ",
+      "variants": [
+        "ESPERANCA ",
+        "ESPERANÇA "
+      ]
+    },
+    "CENTRO PAPUCAIA ": {
+      "normalized": "CENTRO PAPUCAIA ",
+      "variants": [
+        "CENTRO (PAPUCAIA) "
+      ]
+    },
+    "VENEZA ": {
+      "normalized": "VENEZA ",
+      "variants": [
+        "LOTEAMENTO VENEZA ",
+        "RESIDENCIAL VENEZA "
+      ]
+    },
+    "BOA VISTA ": {
+      "normalized": "BOA VISTA ",
+      "variants": [
+        "PARQUE BOA VISTA "
+      ]
+    },
+    "PARQUE JOQUEI CLUB ": {
+      "normalized": "PARQUE JOQUEI CLUB ",
+      "variants": [
+        "JOQUEI CLUBE "
+      ]
+    },
+    "VIVENDAS DO COQUEIRO IV ": {
+      "normalized": "VIVENDAS DO COQUEIRO IV ",
+      "variants": [
+        "VIVENDAS DO COQUEIRO III "
+      ]
+    },
+    "PARQUE CALIFORNIA ": {
+      "normalized": "PARQUE CALIFORNIA ",
+      "variants": [
+        "CALIFORNIA "
+      ]
+    },
+    "CAMPOS DOS GOYTACAZE ": {
+      "normalized": "CAMPOS DOS GOYTACAZE ",
+      "variants": [
+        "CAMPOS GOYTACAZES "
+      ]
+    },
+    "GOITACAZES ": {
+      "normalized": "GOITACAZES ",
+      "variants": [
+        "GOYTACAZES "
+      ]
+    },
+    "FLAMBOYANT II ": {
+      "normalized": "FLAMBOYANT II ",
+      "variants": [
+        "PARQUE FLAMBOYANT "
+      ]
+    },
+    "2 DISTRITO ": {
+      "normalized": "2 DISTRITO ",
+      "variants": [
+        "6 DISTRITO ",
+        "3º DISTRITO ",
+        "1 DISTRITO ",
+        "5 DISTRITO ",
+        "1º DISTRITO ",
+        "3 DISTRITO "
+      ]
+    },
+    "JARDIM DAS ACACIAS ": {
+      "normalized": "JARDIM DAS ACACIAS ",
+      "variants": [
+        "JD DAS ACACIAS "
+      ]
+    },
+    "PARQUE PENHA ": {
+      "normalized": "PARQUE PENHA ",
+      "variants": [
+        "PENHA "
+      ]
+    },
+    "PARQUE IMPERIAL ": {
+      "normalized": "PARQUE IMPERIAL ",
+      "variants": [
+        "JARDIM IMPERIAL "
+      ]
+    },
+    "PARQUE SANTO AMARO ": {
+      "normalized": "PARQUE SANTO AMARO ",
+      "variants": [
+        "JARDIM SANTO AMARO "
+      ]
+    },
+    "PARQUE ROSARIO ": {
+      "normalized": "PARQUE ROSARIO ",
+      "variants": [
+        "JARDIM ROSARIO "
+      ]
+    },
+    "PARQUE BELA VISTA ": {
+      "normalized": "PARQUE BELA VISTA ",
+      "variants": [
+        "BELA VISTA "
+      ]
+    },
+    "CHACARAS RIO-PETROPOLIS ": {
+      "normalized": "CHACARAS RIO-PETROPOLIS ",
+      "variants": [
+        "CHACARAS RIO PETROPO ",
+        "CHACARAS RIOPETROPOL "
+      ]
+    },
+    "JARDIM PRIMAVERA ": {
+      "normalized": "JARDIM PRIMAVERA ",
+      "variants": [
+        "PARQUE PRIMAVERA ",
+        "JARDIM PRIMAVERA I "
+      ]
+    },
+    "JARDIM GRAMACHO ": {
+      "normalized": "JARDIM GRAMACHO ",
+      "variants": [
+        "GRAMACHO "
+      ]
+    },
+    "BARRO BRANCO ": {
+      "normalized": "BARRO BRANCO ",
+      "variants": [
+        "JARDIM BARRO BRANCO "
+      ]
+    },
+    "PARQUE DUQUE ": {
+      "normalized": "PARQUE DUQUE ",
+      "variants": [
+        "DUQUES "
+      ]
+    },
+    "PARQUE ALVORADA ": {
+      "normalized": "PARQUE ALVORADA ",
+      "variants": [
+        "JARDIM ALVORADA ",
+        "ALVORADA "
+      ]
+    },
+    "MORADA DO SOL I (ITAMBI) ": {
+      "normalized": "MORADA DO SOL I (ITAMBI) ",
+      "variants": [
+        "MORADA DO SOL ITAMBI "
+      ]
+    },
+    "MARAMBAIA (MANILHA) ": {
+      "normalized": "MARAMBAIA (MANILHA) ",
+      "variants": [
+        "MARAMBAIA MANILHA "
+      ]
+    },
+    "MONTE VERDE MANILHA ": {
+      "normalized": "MONTE VERDE MANILHA ",
+      "variants": [
+        "MONTE VERDE (MANILHA) "
+      ]
+    },
+    "CABUCU ": {
+      "normalized": "CABUCU ",
+      "variants": [
+        "CABUÇU "
+      ]
+    },
+    "GEBARA (ITAMBI) ": {
+      "normalized": "GEBARA (ITAMBI) ",
+      "variants": [
+        "GEBARA ITAMBI "
+      ]
+    },
+    "VENDA DAS PEDRAS ": {
+      "normalized": "VENDA DAS PEDRAS ",
+      "variants": [
+        "VENDAS DAS PEDRAS "
+      ]
+    },
+    "VILA BRASIL (MANILHA) ": {
+      "normalized": "VILA BRASIL (MANILHA) ",
+      "variants": [
+        "VILA GABRIELA (MANILHA) "
+      ]
+    },
+    "N. HORIZONTE MANIL ": {
+      "normalized": "N. HORIZONTE MANIL ",
+      "variants": [
+        "NOVO HORIZONTE MANIL "
+      ]
+    },
+    "SANTO ANTONIO ": {
+      "normalized": "SANTO ANTONIO ",
+      "variants": [
+        "JD SANTO ANTONIO "
+      ]
+    },
+    "JD ITAMARATI ": {
+      "normalized": "JD ITAMARATI ",
+      "variants": [
+        " ITAMARATI "
+      ]
+    },
+    "NOSSA SENHORA DE FAT ": {
+      "normalized": "NOSSA SENHORA DE FAT ",
+      "variants": [
+        "NOSSA SENHORA DE FATIMA ",
+        "NOSSA SENHORA DA PAZ "
+      ]
+    },
+    "CENTRO CABUCU ": {
+      "normalized": "CENTRO CABUCU ",
+      "variants": [
+        "CENTRO (CABUCU) "
+      ]
+    },
+    "LOT PARTE NORTE DA F ": {
+      "normalized": "LOT PARTE NORTE DA F ",
+      "variants": [
+        "PARTE NORTE DA FAZEN "
+      ]
+    },
+    "SAO JOSE ": {
+      "normalized": "SAO JOSE ",
+      "variants": [
+        "SÃO JOSE "
+      ]
+    },
+    "ITAOCARA ": {
+      "normalized": "ITAOCARA ",
+      "variants": [
+        "ITAOCA "
+      ]
+    },
+    "LOT RES VALE VERDE ": {
+      "normalized": "LOT RES VALE VERDE ",
+      "variants": [
+        "RES VALE VERDE ",
+        "VALVERDE "
+      ]
+    },
+    "PARQUE ATLANTICO ": {
+      "normalized": "PARQUE ATLANTICO ",
+      "variants": [
+        "LOT JARDIM ATLANTICO ",
+        "JARDIM ATLANTICO ",
+        "ATLANTICA "
+      ]
+    },
+    "JARDIM DA PAZ GUIA D ": {
+      "normalized": "JARDIM DA PAZ GUIA D ",
+      "variants": [
+        "JD DA PAZ GUIA DE PA "
+      ]
+    },
+    "IPIRANGA (GUIA DE PACOBAIBA) ": {
+      "normalized": "IPIRANGA (GUIA DE PACOBAIBA) ",
+      "variants": [
+        "BAIA BRANCA (GUIA DE PACOBAIBA) "
+      ]
+    },
+    "JARDIM DA PAZ ": {
+      "normalized": "JARDIM DA PAZ ",
+      "variants": [
+        "JD DA PAZ "
+      ]
+    },
+    "PRAIA DO ANIL (GUIA DE PACOBAIBA) ": {
+      "normalized": "PRAIA DO ANIL (GUIA DE PACOBAIBA) ",
+      "variants": [
+        "PRAIA DO IMPERADOR (GUIA DE PACOBAIBA) ",
+        "PRAIA DE OLARIA (GUIA DE PACOBAIBA) "
+      ]
+    },
+    "MARAPICU ": {
+      "normalized": "MARAPICU ",
+      "variants": [
+        "PARQUE MARAPICU I "
+      ]
+    },
+    "SANTA RITA ": {
+      "normalized": "SANTA RITA ",
+      "variants": [
+        "JARDIM SANTA MARIA ",
+        "SANTA ANITA "
+      ]
+    },
+    "JARDIM QUEIMADOS ": {
+      "normalized": "JARDIM QUEIMADOS ",
+      "variants": [
+        "QUEIMADOS "
+      ]
+    },
+    "LOT EXT DO SERRAMAR ": {
+      "normalized": "LOT EXT DO SERRAMAR ",
+      "variants": [
+        "LOTEAMENTO EXTENSAO DO SERRAMAR "
+      ]
+    },
+    "ANCHIETA ": {
+      "normalized": "ANCHIETA ",
+      "variants": [
+        "PARQUE ANCHIETA "
+      ]
+    },
+    "FREGUESIA JACAREPAGU ": {
+      "normalized": "FREGUESIA JACAREPAGU ",
+      "variants": [
+        "FREGUESIA (JACAREPAGUA) "
+      ]
+    },
+    "FREG JACAREPAGUA ": {
+      "normalized": "FREG JACAREPAGUA ",
+      "variants": [
+        "FREG DE JACAREPAGUA "
+      ]
+    },
+    "FREG DE CAMPO GRANDE ": {
+      "normalized": "FREG DE CAMPO GRANDE ",
+      "variants": [
+        "FRE DE CAMPO GRANDE "
+      ]
+    },
+    "JACAREPAGUA ": {
+      "normalized": "JACAREPAGUA ",
+      "variants": [
+        "JACARAPAGUÁ "
+      ]
+    },
+    "N SRA DA AJUDA ": {
+      "normalized": "N SRA DA AJUDA ",
+      "variants": [
+        "NOSSA SRA DA AJUDA "
+      ]
+    },
+    "FREGUESIA GUARATIBA ": {
+      "normalized": "FREGUESIA GUARATIBA ",
+      "variants": [
+        "FREG GUARATIBA ",
+        "FREGUESIA DE GUARATI "
+      ]
+    },
+    "JARDIM CATARINA ": {
+      "normalized": "JARDIM CATARINA ",
+      "variants": [
+        "LOT JARDIM CATARINA ",
+        "LOT JD CATARINA "
+      ]
+    },
+    "JARDIM INDEPENDENCIA ": {
+      "normalized": "JARDIM INDEPENDENCIA ",
+      "variants": [
+        "LOT JD INDEPENDENCIA "
+      ]
+    },
+    "PORTO DO ROSA ": {
+      "normalized": "PORTO DO ROSA ",
+      "variants": [
+        "PORTAO DO ROSA "
+      ]
+    },
+    "IPIIBA ": {
+      "normalized": "IPIIBA ",
+      "variants": [
+        "IPIBA "
+      ]
+    },
+    "VILA LAGE ": {
+      "normalized": "VILA LAGE ",
+      "variants": [
+        "VILA LAGE I "
+      ]
+    },
+    "JARDIM NOVA REPUBLIC ": {
+      "normalized": "JARDIM NOVA REPUBLIC ",
+      "variants": [
+        "JARDIM NOVA REPUBLICA "
+      ]
+    },
+    "PARAISO ": {
+      "normalized": "PARAISO ",
+      "variants": [
+        "JARDIM PARAISO "
+      ]
+    },
+    "PORTO VELHO ": {
+      "normalized": "PORTO VELHO ",
+      "variants": [
+        "PORTAO VERMELHO "
+      ]
+    },
+    "NEVES NEVES ": {
+      "normalized": "NEVES NEVES ",
+      "variants": [
+        "NEVES (NEVES) "
+      ]
+    },
+    "JARDIM ALCANTARA ": {
+      "normalized": "JARDIM ALCANTARA ",
+      "variants": [
+        "ALCANTARA "
+      ]
+    },
+    "JD N SRA AUXILIADORA ": {
+      "normalized": "JD N SRA AUXILIADORA ",
+      "variants": [
+        "JD N S AUXILIADORA "
+      ]
+    },
+    "FAZENDA RESTAURADA ": {
+      "normalized": "FAZENDA RESTAURADA ",
+      "variants": [
+        "LOT FAZ RESTAURADA "
+      ]
+    },
+    "SAO MATEUS ": {
+      "normalized": "SAO MATEUS ",
+      "variants": [
+        "SAO MATHEUS "
+      ]
+    },
+    "BANDEIRANTES I ": {
+      "normalized": "BANDEIRANTES I ",
+      "variants": [
+        "BANDEIRANTES II ",
+        "BANDEIRANTES "
+      ]
+    }
+  }
+}

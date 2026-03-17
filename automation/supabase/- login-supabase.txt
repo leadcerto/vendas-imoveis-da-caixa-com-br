@@ -1,0 +1,31 @@
+Supabase
+
+Project Nam
+app.imoveis.caixa
+
+Database Password
+4UWZ5ELdcO1p5zuy
+
+Region
+South América (São Paulo)
+
+HABILITADO
+Enable Data API
+Autogenerate a RESTful API for your public schema. Recommended if using a client library like supabase-js.
+
+NÃO HABILITADO
+Enable automatic RLS
+Create an event trigger that automatically enables Row Level Security on all new tables in the public schema.
+
+TOKEN
+app.imoveis.caixa
+sbp_5915b34f1f4de868d36d8f78e3116e4b4baeee72
+
+Project URL
+https://mhlcjaprpkveernmiohx.supabase.co
+
+Publishable Key
+sb_publishable_Ffe1v9H2Ks0jONwuemi5aQ_oGJrL8Hx
+
+Direct connection string
+postgresql://postgres:[YOUR-PASSWORD]@db.mhlcjaprpkveernmiohx.supabase.co:5432/postgres

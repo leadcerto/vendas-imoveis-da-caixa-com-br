@@ -61,15 +61,47 @@
                     <div class="upload-icon">📁</div>
                     <p id="fileNameDisplay">Arraste seu CSV aqui ou clique para selecionar</p>
                 </div>
-                <button id="uploadBtn" class="btn-primary" disabled>Fazer Upload</button>
+                <div class="upload-actions">
+                    <button id="uploadBtn" class="btn-primary" disabled>Salvar Arquivo</button>
+                    <button id="importBtn" class="btn-secondary" disabled>Importar para Banco de Dados</button>
+                </div>
+                <div id="importProgress" class="import-progress" style="display: none;">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <span id="progressText">Importando dados...</span>
+                </div>
             </div>
 
             <div class="files-list-container">
-                <h3>Arquivos Enviados (CSV-CAIXA)</h3>
+                <h3>Arquivos Enviados (Storage)</h3>
                 <ul id="filesList" class="files-list">
                     <!-- Files will be listed here -->
                     <li class="loading-files">Carregando arquivos...</li>
                 </ul>
+            </div>
+        </section>
+
+        <section class="properties-section glass-card">
+            <div class="section-header">
+                <h2>Base de Imóveis (Banco de Dados)</h2>
+                <div class="stats" id="propertiesCount">Carregando...</div>
+            </div>
+            
+            <div class="table-container">
+                <table id="propertiesTable">
+                    <thead>
+                        <tr>
+                            <th>Nº Imóvel</th>
+                            <th>UF</th>
+                            <th>Cidade</th>
+                            <th>Bairro</th>
+                            <th>Preço</th>
+                            <th>Desconto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="propertiesBody">
+                        <tr><td colspan="6" style="text-align:center; padding: 2rem; color: rgba(255,255,255,0.2);">Importe um CSV para ver os dados aqui</td></tr>
+                    </tbody>
+                </table>
             </div>
         </section>
     </main>

@@ -5,12 +5,25 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // State
 let allLeads = [];
+let selectedFile = null;
+
+// DOM Elements
+const csvInput = document.getElementById('csvInput');
+const dropZone = document.getElementById('dropZone');
+const fileNameDisplay = document.getElementById('fileNameDisplay');
+const uploadBtn = document.getElementById('uploadBtn');
+const importBtn = document.getElementById('importBtn');
+const filesList = document.getElementById('filesList');
+const propertiesBody = document.getElementById('propertiesBody');
+const propertiesCount = document.getElementById('propertiesCount');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchLeads();
     fetchFiles();
+    fetchProperties();
     setupDragAndDrop();
+    setupEventListeners();
 });
 
 // Fetch leads from Supabase
@@ -35,197 +48,12 @@ async function fetchLeads() {
     } catch (error) {
         console.error('Erro ao buscar leads:', error.message);
         leadsCount.textContent = 'Erro ao carregar dados';
-        leadsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #ef4444;">Erro ao carregar leads. Verifique o console.</td></tr>';
+        leadsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #ef4444;">Erro ao carregar leads.</td></tr>';
     }
 }
 
-// ... existing lead functions ...
-
-// CSV Management Logic
-const csvInput = document.getElementById('csvInput');
-const dropZone = document.getElementById('dropZone');
-const fileNameDisplay = document.getElementById('fileNameDisplay');
-const uploadBtn = document.getElementById('uploadBtn');
-const filesList = document.getElementById('filesList');
-
-let selectedFile = null;
-
-// Drag and Drop Setup
-function setupDragAndDrop() {
-    if (!dropZone) return;
-
-    dropZone.addEventListener('click', () => csvInput.click());
-
-    csvInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
-        }
-    });
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const file = dt.files[0];
-        if (file && file.name.endsWith('.csv')) {
-            handleFileSelect(file);
-        } else {
-            alert('Por favor, selecione um arquivo .csv');
-        }
-    });
-}
-
-function handleFileSelect(file) {
-    selectedFile = file;
-    fileNameDisplay.textContent = `Selecionado: ${file.name}`;
-    fileNameDisplay.style.color = '#fff';
-    uploadBtn.disabled = false;
-}
-
-// Upload Logic
-uploadBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
-
-    const originalText = uploadBtn.textContent;
-    try {
-        uploadBtn.textContent = 'Enviando...';
-        uploadBtn.disabled = true;
-
-        // Create filename with date prefix: YYYYMMDD_HHMMSS_name
-        const now = new Date();
-        const timestamp = now.getFullYear().toString() +
-            (now.getMonth() + 1).toString().padStart(2, '0') +
-            now.getDate().toString().padStart(2, '0') + '_' +
-            now.getHours().toString().padStart(2, '0') +
-            now.getMinutes().toString().padStart(2, '0') +
-            now.getSeconds().toString().padStart(2, '0');
-        
-        const fileName = `${timestamp}_${selectedFile.name}`;
-
-        const { data, error } = await _supabase.storage
-            .from('csv-caixa')
-            .upload(fileName, selectedFile);
-
-        if (error) throw error;
-
-        // Success
-        uploadBtn.textContent = 'Enviado com Sucesso!';
-        uploadBtn.style.background = '#22c55e';
-        
-        // Reset
-        selectedFile = null;
-        fileNameDisplay.textContent = 'Arraste seu CSV aqui ou clique para selecionar';
-        csvInput.value = '';
-        
-        await fetchFiles();
-
-        setTimeout(() => {
-            uploadBtn.textContent = originalText;
-            uploadBtn.style.background = '';
-            uploadBtn.disabled = true;
-        }, 2000);
-
-    } catch (error) {
-        console.error('Erro no upload:', error.message);
-        alert('Erro ao enviar arquivo: ' + error.message + '\n\nCertifique-se de que o bucket "csv-caixa" existe no Storage do seu Supabase.');
-        uploadBtn.textContent = originalText;
-        uploadBtn.disabled = false;
-    }
-});
-
-// Fetch File List
-async function fetchFiles() {
-    if (!filesList) return;
-
-    try {
-        const { data, error } = await _supabase.storage
-            .from('csv-caixa')
-            .list('', {
-                sortBy: { column: 'name', order: 'desc' }
-            });
-
-        if (error) throw error;
-
-        renderFilesList(data);
-
-    } catch (error) {
-        console.error('Erro ao listar arquivos:', error.message);
-        filesList.innerHTML = '<li class="loading-files">Erro ao carregar lista de arquivos.</li>';
-    }
-}
-
-function renderFilesList(files) {
-    if (!files || files.length === 0) {
-        filesList.innerHTML = '<li class="loading-files">Nenhum arquivo enviado ainda na pasta CSV-CAIXA.</li>';
-        return;
-    }
-
-    // Filter out potential system files like .emptyFolderPlaceholder
-    const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder');
-
-    if (validFiles.length === 0) {
-        filesList.innerHTML = '<li class="loading-files">Nenhum arquivo enviado ainda.</li>';
-        return;
-    }
-
-    filesList.innerHTML = validFiles.map(file => {
-        // Extract original name from prefix (if present)
-        const nameParts = file.name.split('_');
-        const hasTimestamp = nameParts.length > 1 && nameParts[0].length >= 15;
-        const displayName = hasTimestamp ? nameParts.slice(2).join('_') : file.name; // slice(2) because date_time_name
-        
-        // Since my timestamp logic was YYYYMMDD_HHMMSS_name, parts are [YYYYMMDD, HHMMSS, name]
-        const displayFileName = nameParts.length >= 3 ? nameParts.slice(2).join('_') : file.name;
-        
-        let dateStr = 'Data desconhecida';
-        if (nameParts.length >= 2) {
-            const d = nameParts[0];
-            const t = nameParts[1];
-            if (d.length === 8 && t.length === 6) {
-                dateStr = `${d.substring(6,8)}/${d.substring(4,6)}/${d.substring(0,4)} ${t.substring(0,2)}:${t.substring(2,4)}`;
-            }
-        }
-
-        return `
-            <li class="file-item">
-                <div class="file-info">
-                    <span class="file-name">${displayFileName}</span>
-                    <span class="file-date">Enviado em: ${dateStr}</span>
-                </div>
-                <a href="${getDownloadUrl(file.name)}" target="_blank" class="btn-download">BAIXAR</a>
-            </li>
-        `;
-    }).join('');
-}
-
-function getDownloadUrl(fileName) {
-    const { data } = _supabase.storage
-        .from('csv-caixa')
-        .getPublicUrl(fileName);
-    return data.publicUrl;
-}
-
-// ... original renderLeads and modal functions ...
-
-// Render leads table
 function renderLeads(leads) {
     const leadsBody = document.getElementById('leadsBody');
-    
     if (leads.length === 0) {
         leadsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: rgba(255,255,255,0.3); padding: 2rem;">Nenhum lead encontrado ainda.</td></tr>';
         return;
@@ -245,20 +73,249 @@ function renderLeads(leads) {
     `).join('');
 }
 
-// Modal Logic
+// Properties Logic
+async function fetchProperties() {
+    try {
+        const { data, count, error } = await _supabase
+            .from('properties')
+            .select('*', { count: 'exact' })
+            .limit(15)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        propertiesCount.textContent = `${count || 0} imóveis no banco`;
+        renderProperties(data);
+
+    } catch (error) {
+        console.error('Erro ao buscar imóveis:', error.message);
+        propertiesCount.textContent = 'Erro ao carregar';
+    }
+}
+
+function renderProperties(properties) {
+    if (!properties || properties.length === 0) return;
+
+    propertiesBody.innerHTML = properties.map(p => `
+        <tr>
+            <td>${p.property_number}</td>
+            <td>${p.uf}</td>
+            <td>${p.city}</td>
+            <td class="notes-cell">${p.neighborhood}</td>
+            <td>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.price || 0)}</td>
+            <td>${p.discount_percentage || 0}%</td>
+        </tr>
+    `).join('');
+}
+
+// CSV Handlers
+function setupEventListeners() {
+    uploadBtn.addEventListener('click', handleUploadToStorage);
+    importBtn.addEventListener('click', handleImportToDatabase);
+}
+
+function setupDragAndDrop() {
+    if (!dropZone) return;
+
+    dropZone.addEventListener('click', () => csvInput.click());
+
+    csvInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+    });
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.csv')) handleFileSelect(file);
+        else alert('Por favor, selecione um arquivo .csv');
+    });
+}
+
+function handleFileSelect(file) {
+    selectedFile = file;
+    fileNameDisplay.textContent = `Selecionado: ${file.name}`;
+    fileNameDisplay.style.color = '#fff';
+    uploadBtn.disabled = false;
+    importBtn.disabled = false;
+}
+
+// Storage Upload
+async function handleUploadToStorage() {
+    if (!selectedFile) return;
+    const originalText = uploadBtn.textContent;
+
+    try {
+        uploadBtn.textContent = 'Enviando...';
+        uploadBtn.disabled = true;
+
+        const now = new Date();
+        const timestamp = now.getFullYear().toString() +
+            (now.getMonth() + 1).toString().padStart(2, '0') +
+            now.getDate().toString().padStart(2, '0') + '_' +
+            now.getHours().toString().padStart(2, '0') +
+            now.getMinutes().toString().padStart(2, '0') +
+            now.getSeconds().toString().padStart(2, '0');
+        
+        const fileName = `${timestamp}_${selectedFile.name}`;
+
+        const { error } = await _supabase.storage.from('csv-caixa').upload(fileName, selectedFile);
+        if (error) throw error;
+
+        uploadBtn.textContent = 'Salvo no Storage!';
+        uploadBtn.style.background = '#22c55e';
+        
+        await fetchFiles();
+        setTimeout(() => {
+            uploadBtn.textContent = originalText;
+            uploadBtn.style.background = '';
+            uploadBtn.disabled = false;
+        }, 2000);
+
+    } catch (error) {
+        alert('Erro no Storage: ' + error.message);
+        uploadBtn.textContent = originalText;
+        uploadBtn.disabled = false;
+    }
+}
+
+// Database Import (Streaming)
+async function handleImportToDatabase() {
+    if (!selectedFile) return;
+
+    const progressDiv = document.getElementById('importProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    try {
+        importBtn.disabled = true;
+        progressDiv.style.display = 'block';
+        progressFill.style.width = '0%';
+        
+        let count = 0;
+        let batch = [];
+        const batchSize = 100;
+        
+        Papa.parse(selectedFile, {
+            delimiter: ";",
+            skipEmptyLines: true,
+            step: async function(results, parser) {
+                count++;
+                if (count <= 4) return; // Skip title lines
+
+                const row = results.data;
+                if (row.length < 10) return;
+
+                const property = {
+                    property_number: row[0].trim(),
+                    uf: row[1].trim(),
+                    city: row[2].trim(),
+                    neighborhood: row[3].trim(),
+                    address: row[4].trim(),
+                    price: parseNumber(row[5]),
+                    appraisal_value: parseNumber(row[6]),
+                    discount_percentage: parseNumber(row[7]),
+                    modality: row[8].trim(),
+                    link_acesso: row[9].trim()
+                };
+
+                batch.push(property);
+
+                if (batch.length >= batchSize) {
+                    parser.pause();
+                    progressText.textContent = `Processando: ${count - 4} imóveis...`;
+                    const { error } = await _supabase.from('properties').upsert(batch, { onConflict: 'property_number' });
+                    if (error) console.error('Error batch:', error);
+                    batch = [];
+                    parser.resume();
+                }
+            },
+            complete: async function() {
+                if (batch.length > 0) {
+                    await _supabase.from('properties').upsert(batch, { onConflict: 'property_number' });
+                }
+                
+                progressFill.style.width = '100%';
+                progressText.textContent = `Sucesso! ${count - 4} imóveis importados.`;
+                
+                await fetchProperties();
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                    importBtn.disabled = false;
+                }, 3000);
+            }
+        });
+
+    } catch (error) {
+        alert('Erro na importação: ' + error.message);
+        importBtn.disabled = false;
+    }
+}
+
+function parseNumber(val) {
+    if (!val) return 0;
+    let cleaned = val.toString().trim().replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
+}
+
+// Storage List
+async function fetchFiles() {
+    try {
+        const { data, error } = await _supabase.storage.from('csv-caixa').list('', {
+            sortBy: { column: 'name', order: 'desc' }
+        });
+        if (error) throw error;
+        renderFilesList(data);
+    } catch (error) {
+        filesList.innerHTML = '<li class="loading-files">Erro ao carregar arquivos.</li>';
+    }
+}
+
+function renderFilesList(files) {
+    if (!files || files.length === 0) {
+        filesList.innerHTML = '<li class="loading-files">Nenhum arquivo no storage.</li>';
+        return;
+    }
+    const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+    filesList.innerHTML = validFiles.map(file => {
+        const nameParts = file.name.split('_');
+        const displayFileName = nameParts.length >= 3 ? nameParts.slice(2).join('_') : file.name;
+        return `
+            <li class="file-item">
+                <div class="file-info"><span class="file-name">${displayFileName}</span></div>
+                <a href="${getDownloadUrl(file.name)}" target="_blank" class="btn-download">BAIXAR</a>
+            </li>
+        `;
+    }).join('');
+}
+
+function getDownloadUrl(fileName) {
+    const { data } = _supabase.storage.from('csv-caixa').getPublicUrl(fileName);
+    return data.publicUrl;
+}
+
+// Modal and Edits
 const modal = document.getElementById('editModal');
 const editForm = document.getElementById('editForm');
 
 function openEditModal(id) {
     const lead = allLeads.find(l => l.id === id);
     if (!lead) return;
-
     document.getElementById('editId').value = lead.id;
     document.getElementById('editName').value = lead.name || '';
     document.getElementById('editWhatsapp').value = lead.whatsapp || '';
     document.getElementById('editEmail').value = lead.email;
     document.getElementById('editNotes').value = lead.notes || '';
-
     modal.classList.add('active');
 }
 
@@ -267,48 +324,24 @@ function closeModal() {
     editForm.reset();
 }
 
-window.onclick = (event) => {
-    if (event.target === modal) closeModal();
-};
+window.onclick = (event) => { if (event.target === modal) closeModal(); };
 
 editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const id = document.getElementById('editId').value;
     const name = document.getElementById('editName').value;
     const whatsapp = document.getElementById('editWhatsapp').value;
     const notes = document.getElementById('editNotes').value;
-    
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
 
     try {
-        submitBtn.textContent = 'Salvando...';
         submitBtn.disabled = true;
-
-        const { error } = await _supabase
-            .from('leads')
-            .update({ name, whatsapp, notes })
-            .eq('id', id);
-
+        const { error } = await _supabase.from('leads').update({ name, whatsapp, notes }).eq('id', id);
         if (error) throw error;
-
-        submitBtn.textContent = 'Salvo!';
-        submitBtn.style.background = '#22c55e';
-        
         await fetchLeads();
-        
-        setTimeout(() => {
-            closeModal();
-            submitBtn.textContent = originalText;
-            submitBtn.style.background = '';
-            submitBtn.disabled = false;
-        }, 1000);
-
+        setTimeout(() => { closeModal(); submitBtn.disabled = false; }, 1000);
     } catch (error) {
-        console.error('Erro ao atualizar lead:', error.message);
         alert('Erro ao salvar: ' + error.message);
-        submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 });

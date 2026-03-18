@@ -207,46 +207,60 @@ async function handleImportToDatabase() {
         const batchSize = 100;
         
         Papa.parse(selectedFile, {
-            delimiter: ";",
+            delimiter: "", // Auto-detect delimiter
             skipEmptyLines: true,
             step: async function(results, parser) {
                 count++;
-                if (count <= 4) return; // Skip title lines
-
+                
+                // Skip common junk headers if they exist
                 const row = results.data;
-                if (row.length < 10) return;
+                if (!row || row.length < 5) return; 
+                
+                // Skip if it looks like a header (e.g., first column is not a number)
+                if (count < 10 && (row[0].toLowerCase().includes('imóvel') || row[0].toLowerCase().includes('nº'))) {
+                    console.log('Skipping header row:', row);
+                    return;
+                }
 
                 const property = {
-                    property_number: row[0].trim(),
-                    uf: row[1].trim(),
-                    city: row[2].trim(),
-                    neighborhood: row[3].trim(),
-                    address: row[4].trim(),
+                    property_number: row[0]?.trim() || '',
+                    uf: row[1]?.trim() || '',
+                    city: row[2]?.trim() || '',
+                    neighborhood: row[3]?.trim() || '',
+                    address: row[4]?.trim() || '',
                     price: parseNumber(row[5]),
                     appraisal_value: parseNumber(row[6]),
                     discount_percentage: parseNumber(row[7]),
-                    modality: row[8].trim(),
-                    link_acesso: row[9].trim()
+                    modality: row[8]?.trim() || '',
+                    link_acesso: row[9]?.trim() || ''
                 };
+
+                // Basic validation
+                if (!property.property_number || isNaN(property.price)) {
+                    console.warn('Skipping invalid row:', row);
+                    return;
+                }
 
                 batch.push(property);
 
                 if (batch.length >= batchSize) {
                     parser.pause();
-                    progressText.textContent = `Processando: ${count - 4} imóveis...`;
+                    progressText.textContent = `Processando: ${count} linhas...`;
                     const { error } = await _supabase.from('properties').upsert(batch, { onConflict: 'property_number' });
-                    if (error) console.error('Error batch:', error);
+                    if (error) console.error('Error batch upsert:', error);
                     batch = [];
                     parser.resume();
                 }
             },
             complete: async function() {
+                console.log('Parsing complete. Total rows processed:', count);
                 if (batch.length > 0) {
-                    await _supabase.from('properties').upsert(batch, { onConflict: 'property_number' });
+                    const { error } = await _supabase.from('properties').upsert(batch, { onConflict: 'property_number' });
+                    if (error) console.error('Error final batch upsert:', error);
                 }
                 
                 progressFill.style.width = '100%';
-                progressText.textContent = `Sucesso! ${count - 4} imóveis importados.`;
+                progressText.textContent = `Sucesso! Processamento concluído.`;
                 
                 await fetchProperties();
                 setTimeout(() => {

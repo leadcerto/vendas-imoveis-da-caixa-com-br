@@ -56,6 +56,16 @@
             </div>
             
             <div class="upload-container">
+                <div class="source-selector">
+                    <label for="csvSource">Fonte dos Dados:</label>
+                    <select id="csvSource">
+                        <option value="leadcerto">LeadCerto</option>
+                        <option value="icaixa">ICaixa</option>
+                    </select>
+                    <label class="auto-import-toggle">
+                        <input type="checkbox" id="autoImport" checked> Importação Automática
+                    </label>
+                </div>
                 <input type="file" id="csvInput" accept=".csv" hidden>
                 <div class="drop-zone" id="dropZone">
                     <div class="upload-icon">📁</div>

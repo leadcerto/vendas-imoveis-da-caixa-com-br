@@ -14,6 +14,8 @@ const fileNameDisplay = document.getElementById('fileNameDisplay');
 const uploadBtn = document.getElementById('uploadBtn');
 const importBtn = document.getElementById('importBtn');
 const filesList = document.getElementById('filesList');
+const csvSource = document.getElementById('csvSource');
+const autoImport = document.getElementById('autoImport');
 const propertiesBody = document.getElementById('propertiesBody');
 const propertiesCount = document.getElementById('propertiesCount');
 
@@ -148,6 +150,17 @@ function handleFileSelect(file) {
     fileNameDisplay.style.color = '#fff';
     uploadBtn.disabled = false;
     importBtn.disabled = false;
+
+    // Direct path: If auto-import is enabled, start the whole process immediately
+    if (autoImport && autoImport.checked) {
+        console.log('Auto-import enabled. Starting process...');
+        handleProcessAll();
+    }
+}
+
+async function handleProcessAll() {
+    await handleUploadToStorage();
+    await handleImportToDatabase();
 }
 
 // Storage Upload
@@ -232,7 +245,8 @@ async function handleImportToDatabase() {
                     appraisal_value: parseNumber(row[6]),
                     discount_percentage: parseNumber(row[7]),
                     modality: row[8]?.trim() || '',
-                    link_acesso: row[9]?.trim() || ''
+                    link_acesso: row[9]?.trim() || '',
+                    source: csvSource ? csvSource.value : 'unknown'
                 };
 
                 // Basic validation

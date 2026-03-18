@@ -48,6 +48,30 @@
                 </table>
             </div>
         </section>
+
+        <section class="csv-section glass-card">
+            <div class="section-header">
+                <h2>Importação de Dados (CSV)</h2>
+                <span class="subtitle">Selecione uma tabela .csv para upload e gravação</span>
+            </div>
+            
+            <div class="upload-container">
+                <input type="file" id="csvInput" accept=".csv" hidden>
+                <div class="drop-zone" id="dropZone">
+                    <div class="upload-icon">📁</div>
+                    <p id="fileNameDisplay">Arraste seu CSV aqui ou clique para selecionar</p>
+                </div>
+                <button id="uploadBtn" class="btn-primary" disabled>Fazer Upload</button>
+            </div>
+
+            <div class="files-list-container">
+                <h3>Arquivos Enviados (CSV-CAIXA)</h3>
+                <ul id="filesList" class="files-list">
+                    <!-- Files will be listed here -->
+                    <li class="loading-files">Carregando arquivos...</li>
+                </ul>
+            </div>
+        </section>
     </main>
 
     <!-- Modal para Edição -->
@@ -81,6 +105,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

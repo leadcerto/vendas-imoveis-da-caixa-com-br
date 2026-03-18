@@ -9,6 +9,8 @@ let allLeads = [];
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fetchLeads();
+    fetchFiles();
+    setupDragAndDrop();
 });
 
 // Fetch leads from Supabase
@@ -36,6 +38,189 @@ async function fetchLeads() {
         leadsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #ef4444;">Erro ao carregar leads. Verifique o console.</td></tr>';
     }
 }
+
+// ... existing lead functions ...
+
+// CSV Management Logic
+const csvInput = document.getElementById('csvInput');
+const dropZone = document.getElementById('dropZone');
+const fileNameDisplay = document.getElementById('fileNameDisplay');
+const uploadBtn = document.getElementById('uploadBtn');
+const filesList = document.getElementById('filesList');
+
+let selectedFile = null;
+
+// Drag and Drop Setup
+function setupDragAndDrop() {
+    if (!dropZone) return;
+
+    dropZone.addEventListener('click', () => csvInput.click());
+
+    csvInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        if (file && file.name.endsWith('.csv')) {
+            handleFileSelect(file);
+        } else {
+            alert('Por favor, selecione um arquivo .csv');
+        }
+    });
+}
+
+function handleFileSelect(file) {
+    selectedFile = file;
+    fileNameDisplay.textContent = `Selecionado: ${file.name}`;
+    fileNameDisplay.style.color = '#fff';
+    uploadBtn.disabled = false;
+}
+
+// Upload Logic
+uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    const originalText = uploadBtn.textContent;
+    try {
+        uploadBtn.textContent = 'Enviando...';
+        uploadBtn.disabled = true;
+
+        // Create filename with date prefix: YYYYMMDD_HHMMSS_name
+        const now = new Date();
+        const timestamp = now.getFullYear().toString() +
+            (now.getMonth() + 1).toString().padStart(2, '0') +
+            now.getDate().toString().padStart(2, '0') + '_' +
+            now.getHours().toString().padStart(2, '0') +
+            now.getMinutes().toString().padStart(2, '0') +
+            now.getSeconds().toString().padStart(2, '0');
+        
+        const fileName = `${timestamp}_${selectedFile.name}`;
+
+        const { data, error } = await _supabase.storage
+            .from('csv-caixa')
+            .upload(fileName, selectedFile);
+
+        if (error) throw error;
+
+        // Success
+        uploadBtn.textContent = 'Enviado com Sucesso!';
+        uploadBtn.style.background = '#22c55e';
+        
+        // Reset
+        selectedFile = null;
+        fileNameDisplay.textContent = 'Arraste seu CSV aqui ou clique para selecionar';
+        csvInput.value = '';
+        
+        await fetchFiles();
+
+        setTimeout(() => {
+            uploadBtn.textContent = originalText;
+            uploadBtn.style.background = '';
+            uploadBtn.disabled = true;
+        }, 2000);
+
+    } catch (error) {
+        console.error('Erro no upload:', error.message);
+        alert('Erro ao enviar arquivo: ' + error.message + '\n\nCertifique-se de que o bucket "csv-caixa" existe no Storage do seu Supabase.');
+        uploadBtn.textContent = originalText;
+        uploadBtn.disabled = false;
+    }
+});
+
+// Fetch File List
+async function fetchFiles() {
+    if (!filesList) return;
+
+    try {
+        const { data, error } = await _supabase.storage
+            .from('csv-caixa')
+            .list('', {
+                sortBy: { column: 'name', order: 'desc' }
+            });
+
+        if (error) throw error;
+
+        renderFilesList(data);
+
+    } catch (error) {
+        console.error('Erro ao listar arquivos:', error.message);
+        filesList.innerHTML = '<li class="loading-files">Erro ao carregar lista de arquivos.</li>';
+    }
+}
+
+function renderFilesList(files) {
+    if (!files || files.length === 0) {
+        filesList.innerHTML = '<li class="loading-files">Nenhum arquivo enviado ainda na pasta CSV-CAIXA.</li>';
+        return;
+    }
+
+    // Filter out potential system files like .emptyFolderPlaceholder
+    const validFiles = files.filter(f => f.name !== '.emptyFolderPlaceholder');
+
+    if (validFiles.length === 0) {
+        filesList.innerHTML = '<li class="loading-files">Nenhum arquivo enviado ainda.</li>';
+        return;
+    }
+
+    filesList.innerHTML = validFiles.map(file => {
+        // Extract original name from prefix (if present)
+        const nameParts = file.name.split('_');
+        const hasTimestamp = nameParts.length > 1 && nameParts[0].length >= 15;
+        const displayName = hasTimestamp ? nameParts.slice(2).join('_') : file.name; // slice(2) because date_time_name
+        
+        // Since my timestamp logic was YYYYMMDD_HHMMSS_name, parts are [YYYYMMDD, HHMMSS, name]
+        const displayFileName = nameParts.length >= 3 ? nameParts.slice(2).join('_') : file.name;
+        
+        let dateStr = 'Data desconhecida';
+        if (nameParts.length >= 2) {
+            const d = nameParts[0];
+            const t = nameParts[1];
+            if (d.length === 8 && t.length === 6) {
+                dateStr = `${d.substring(6,8)}/${d.substring(4,6)}/${d.substring(0,4)} ${t.substring(0,2)}:${t.substring(2,4)}`;
+            }
+        }
+
+        return `
+            <li class="file-item">
+                <div class="file-info">
+                    <span class="file-name">${displayFileName}</span>
+                    <span class="file-date">Enviado em: ${dateStr}</span>
+                </div>
+                <a href="${getDownloadUrl(file.name)}" target="_blank" class="btn-download">BAIXAR</a>
+            </li>
+        `;
+    }).join('');
+}
+
+function getDownloadUrl(fileName) {
+    const { data } = _supabase.storage
+        .from('csv-caixa')
+        .getPublicUrl(fileName);
+    return data.publicUrl;
+}
+
+// ... original renderLeads and modal functions ...
 
 // Render leads table
 function renderLeads(leads) {
@@ -82,12 +267,10 @@ function closeModal() {
     editForm.reset();
 }
 
-// Close modal when clicking outside
 window.onclick = (event) => {
     if (event.target === modal) closeModal();
 };
 
-// Handle Edit Form Submission
 editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -113,7 +296,6 @@ editForm.addEventListener('submit', async (e) => {
         submitBtn.textContent = 'Salvo!';
         submitBtn.style.background = '#22c55e';
         
-        // Refresh data
         await fetchLeads();
         
         setTimeout(() => {

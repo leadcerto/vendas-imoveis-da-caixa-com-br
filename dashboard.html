@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Leads Imóveis Caixa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <main class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="logo">
+                <span class="blue">Venda de Imóveis da </span><span class="orange">Caixa</span>
+            </div>
+            <div class="user-block glass-card">
+                <div class="user-info">
+                    <span class="label">Status:</span>
+                    <span class="value">Usuário Logado</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="leads-section glass-card">
+            <div class="section-header">
+                <h2>Leads Cadastrados</h2>
+                <div class="stats" id="leadsCount">Carregando...</div>
+            </div>
+            
+            <div class="table-container">
+                <table id="leadsTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Nome</th>
+                            <th>WhatsApp</th>
+                            <th>E-mail</th>
+                            <th>Notas</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsBody">
+                        <!-- Leads will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal para Edição -->
+    <div id="editModal" class="modal">
+        <div class="modal-content glass-card">
+            <h3>Editar Lead</h3>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" id="editName" required>
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp</label>
+                    <input type="text" id="editWhatsapp" required>
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="editEmail" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Notas Extras</label>
+                    <textarea id="editNotes" rows="4"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

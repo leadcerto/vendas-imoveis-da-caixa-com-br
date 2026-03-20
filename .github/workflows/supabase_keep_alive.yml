@@ -11,6 +11,14 @@ jobs:
     steps:
       - name: Ping Supabase Database
         run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/leads?select=id&limit=1" \
-          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          URL=$(echo "${{ secrets.SUPABASE_URL }}" | sed 's/"//g' | sed 's/\/$//')
+          KEY=$(echo "${{ secrets.SUPABASE_KEY || secrets.SUPABASE_ANON_KEY }}" | sed 's/"//g')
+
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::SUPABASE_URL or SUPABASE_KEY/SUPABASE_ANON_KEY is missing."
+            exit 1
+          fi
+
+          curl -sSfL -X GET "${URL}/rest/v1/leads?select=id&limit=1" \
+          -H "apikey: ${KEY}" \
+          -H "Authorization: Bearer ${KEY}"

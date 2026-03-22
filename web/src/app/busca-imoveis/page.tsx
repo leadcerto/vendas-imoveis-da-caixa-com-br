@@ -87,7 +87,7 @@ export default function BuscaImoveis() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#334155] font-sans flex flex-col items-center justify-center p-4">
+    <main className="fixed inset-0 flex flex-col items-center justify-center bg-white text-[#334155] font-sans p-4 overflow-hidden">
       {/* WhatsAppFloating removido conforme pedido */}
       {/* Background Decor */}
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#005CA9]/5 blur-[120px] rounded-full pointer-events-none" />

@@ -7,6 +7,7 @@ import { useWhatsApp } from '../context/WhatsAppContext';
 export default function WhatsAppFloating() {
   const pathname = usePathname();
   const { whatsAppData } = useWhatsApp();
+  if (pathname === '/busca-imoveis') return null;
   const phone = "5521978822950";
   
   const [currentUrl, setCurrentUrl] = useState("");

@@ -101,8 +101,15 @@ export default function BuscaImoveis() {
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#F9B200]/5 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Advanced Search Interface */}
-      <section className="relative z-20 max-w-5xl mx-auto px-8 pt-12 md:pt-20">
-        <form onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[40px] shadow-2xl p-8 md:p-12 space-y-12 transition-all hover:border-[#005CA9]/20">
+      <section className="relative z-10 w-full max-w-4xl pt-24 md:pt-32 pb-20 px-4">
+        {/* H1 Title inside the search block container (visually connected) */}
+        <h1 className="text-3xl md:text-5xl font-black text-center mb-10 tracking-tight leading-tight">
+          <span className="text-[#005CA9]">Venda de</span>{' '}
+          <span className="text-[#F9B200]">Imóveis da Caixa</span>
+        </h1>
+
+        <form 
+onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[40px] shadow-2xl p-8 md:p-12 space-y-12 transition-all hover:border-[#005CA9]/20">
           
           {/* Step 1: City & Bairro */}
           <div className="space-y-8">
@@ -221,6 +228,14 @@ export default function BuscaImoveis() {
             <p className="text-center mt-6 text-sm font-medium text-gray-400">
               Estamos monitorando <span className="text-[#005CA9] font-black">{propertiesCount?.toLocaleString('pt-BR') || '...'}</span> imóveis hoje.
             </p>
+            <div className="text-center mt-4">
+              <a 
+                href="https://imoveisdacaixa.com.br/" 
+                className="text-gray-500 hover:text-[#005CA9] underline text-sm font-bold transition-all"
+              >
+                Voltar para o site principal
+              </a>
+            </div>
           </div>
         </form>
       </section>

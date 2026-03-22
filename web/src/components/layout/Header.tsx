@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IoHomeOutline, IoTimeOutline, IoSearchOutline } from 'react-icons/io5';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const [time, setTime] = useState<string>('');
@@ -17,6 +18,9 @@ export default function Header() {
     const interval = setInterval(updateClock, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const pathname = usePathname();
+  if (pathname === '/busca-imoveis') return null;
 
   return (
     <header className="w-full bg-white border-b border-gray-100 py-6 px-4 md:px-8">

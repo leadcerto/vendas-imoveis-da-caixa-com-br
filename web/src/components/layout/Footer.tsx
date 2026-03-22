@@ -1,10 +1,16 @@
+"use client";
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   IoArrowForwardOutline, IoShieldCheckmarkOutline, IoInformationCircleOutline,
   IoDocumentTextOutline, IoBusinessOutline, IoPeopleOutline, IoRocketOutline
 } from 'react-icons/io5';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname === '/busca-imoveis') return null;
+
   return (
     <footer className="w-full bg-white border-t border-gray-100 py-16 px-4 md:px-8 mt-20">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">

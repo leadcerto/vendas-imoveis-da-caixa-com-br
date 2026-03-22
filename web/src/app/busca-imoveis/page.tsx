@@ -233,7 +233,7 @@ onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[25px
                 href="https://imoveisdacaixa.com.br/" 
                 className="text-gray-500 hover:text-[#005CA9] underline text-sm font-bold transition-all"
               >
-                Voltar para o site principal
+                https://imoveisdacaixa.com.br/
               </a>
             </div>
           </div>

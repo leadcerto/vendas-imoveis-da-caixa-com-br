@@ -107,8 +107,7 @@ export default function BuscaImoveis() {
           {/* Step 1: City & Bairro */}
           <div className="space-y-8">
             <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
-              <div className="w-10 h-10 rounded-full bg-[#005CA9]/10 flex items-center justify-center text-[#005CA9] font-black">1</div>
-              <h2 className="text-2xl font-black text-[#005CA9] uppercase tracking-tight">Onde você busca?</h2>
+              {/* Seção 1 Removida conforme pedido */}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -166,8 +165,7 @@ export default function BuscaImoveis() {
           {/* Step 2: Price Range & Options */}
           <div className="space-y-8">
             <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
-              <div className="w-10 h-10 rounded-full bg-[#005CA9]/10 flex items-center justify-center text-[#005CA9] font-black">2</div>
-              <h2 className="text-2xl font-black text-[#005CA9] uppercase tracking-tight">Preferências de Compra</h2>
+              {/* Seção 2 Removida conforme pedido */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -218,7 +216,7 @@ export default function BuscaImoveis() {
               className="w-full py-6 bg-[#F9B200] hover:bg-[#005CA9] text-white rounded-3xl font-black text-xl transition-all flex items-center justify-center gap-4 active:scale-[0.98] shadow-2xl shadow-[#F9B200]/40 group uppercase tracking-widest"
             >
               <IoSearchOutline size={32} className="group-hover:scale-125 transition-transform" />
-              Ver Imóveis Disponíveis
+              Buscar Imóveis
             </button>
             <p className="text-center mt-6 text-sm font-medium text-gray-400">
               Estamos monitorando <span className="text-[#005CA9] font-black">{propertiesCount?.toLocaleString('pt-BR') || '...'}</span> imóveis hoje.

@@ -87,14 +87,14 @@ export default function BuscaImoveis() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#334155] font-sans pb-4">
+    <main className="min-h-screen bg-white text-[#334155] font-sans flex flex-col items-center justify-center p-4">
       {/* WhatsAppFloating removido conforme pedido */}
       {/* Background Decor */}
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#005CA9]/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#F9B200]/5 blur-[120px] rounded-full pointer-events-none" />
  
       {/* Advanced Search Interface */}
-      <section className="relative z-10 w-full max-w-4xl pt-2 md:pt-4 pb-2 px-4">
+      <section className="relative z-10 w-full max-w-4xl">
         {/* H1 Title inside the search block container (visually connected) */}
         <h1 className="text-xl md:text-3xl font-black text-center mb-2 tracking-tight leading-tight">
           <span className="text-[#005CA9]">Venda de</span>{' '}

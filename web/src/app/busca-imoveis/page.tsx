@@ -10,6 +10,7 @@ import WhatsAppFloating from '@/components/WhatsAppFloating';
 
 export default function BuscaImoveis() {
   const router = useRouter();
+
   const [propertiesCount, setPropertiesCount] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -94,38 +95,38 @@ export default function BuscaImoveis() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#334155] font-sans pb-24">
+    <main className="min-h-screen bg-white text-[#334155] font-sans pb-4">
       {/* WhatsAppFloating removido conforme pedido */}
       {/* Background Decor */}
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#005CA9]/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#F9B200]/5 blur-[120px] rounded-full pointer-events-none" />
-
+ 
       {/* Advanced Search Interface */}
-      <section className="relative z-10 w-full max-w-4xl pt-2 md:pt-4 pb-4 px-4">
+      <section className="relative z-10 w-full max-w-4xl pt-2 md:pt-4 pb-2 px-4">
         {/* H1 Title inside the search block container (visually connected) */}
-        <h1 className="text-2xl md:text-4xl font-black text-center mb-4 tracking-tight leading-tight">
+        <h1 className="text-xl md:text-3xl font-black text-center mb-2 tracking-tight leading-tight">
           <span className="text-[#005CA9]">Venda de</span>{' '}
           <span className="text-[#F9B200]">Imóveis da Caixa</span>
         </h1>
 
         <form 
-onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[30px] shadow-2xl p-4 md:p-6 space-y-4 transition-all hover:border-[#005CA9]/20">
+onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[25px] shadow-2xl p-4 md:p-5 space-y-3 transition-all hover:border-[#005CA9]/20">
           
           {/* Step 1: City & Bairro */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-4 border-b border-gray-100 pb-1">
               {/* Seção 1 Removida conforme pedido */}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <label className="text-sm font-black text-gray-400 uppercase tracking-widest pl-2">Cidade / Município</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2">Cidade / Município</label>
                 <div className="relative">
-                  <IoLocationOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005CA9]" size={24} />
+                  <IoLocationOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005CA9]" size={20} />
                   <select 
                     value={selectedCity}
                     onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl py-5 pl-12 pr-4 text-gray-800 font-bold focus:ring-2 focus:ring-[#005CA9]/20 outline-none appearance-none cursor-pointer"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-gray-800 font-bold focus:ring-2 focus:ring-[#005CA9]/20 outline-none appearance-none cursor-pointer"
                   >
                     <option value="">Selecione a cidade</option>
                     {cities.map(city => (

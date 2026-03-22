@@ -1,0 +1,453 @@
+🎨 PROMPT PARA CRIAÇÃO DO DESIGN - PÁGINA DE IMÓVEIS
+
+
+# MISSÃO: Criar o Design Visual da Página de Imóveis da Caixa
+
+Você é um designer front-end especialista. Preciso que você crie o HTML o CSS as Animações  para que a página fique disruptiva, elegante e moderna.
+para uma página de apresentação de imóveis, inspirada no design de:
+https://achaimoveis.net/imovel/3230
+
+## 🎯 OBJETIVO
+
+Criar uma página moderna, clean e responsiva com blocos horizontais separados um do outro.
+A página será praticamente um máscara onde srão carregadas as informações que virão do banco de dados
+
+--- 
+
+🔤 TIPOGRAFIA
+Fontes:
+Principal: 'Roboto', sans-serif
+Títulos: 'Montserrat', sans-serif
+Tamanhos:"gave aqui todo o restante das informaçõers que representem o leiaute de criação
+
+🔤 PALETA DE CORES
+AS MESMAS QUE O SITE https://www.caixa.gov.br/Paginas/home-caixa.aspx
+
+---
+
+(⭐Chamada-WhatsApp-Personalizada⭐)
+Nosso Número é o 5521978822950
+Todos os botões de WhatsApp vai disparar a mesma mensgem abaixo:
+Ao clicar nas imagens iniciaremos o atendimento com a seguinte mensagem personalizada:
+
+ “. 📌 Olá! Tenho interesse no Imóvel da Caixa número *8787702384821* localizado em *Centro* - *BELFORD ROXO-RJ*” 
+
+Onde:
+*8787702384821* é o número do imóvel da página
+*Centro* é o nome do Bairro do endereço do imóvel
+*Municipio/Cidade* é o nome do Município do endereço do imóvel
+
+No caso de não ser a página de um imóvel a mensagem passa a ser a seguinte:
+
+“
+. 📌 Olá! Visitei o site de vocês e preciso de ajuda
+.
+[Link da página de origem]
+” 
+
+---
+
+
+---
+
+### BLOCO 0: SEO
+
+imovel-caixa-post-link-permanente
+imovel-caixa-post-descricao
+
+imovel-caixa-post-palavra-chave
+
+imovel-caixa-post-imagem-destaque
+
+
+---
+
+## 📐 ESTRUTURA DA PÁGINA EM BLOCOS HORIZONTAIS
+
+### BLOCO 1: TÍTULO = H1
+- emoji + [imovel-caixa-post-titulo]
+- Exemplo: "🧡💙 [imovel-caixa-post-titulo]"
+- Alinhado a Esquerda; fonte Média 
+- Padding: 40px acima e abaixo
+
+---
+
+### BLOCO 2: IAMAGEM = H2
+- Slider/carrossel de imagens responsivo
+- Imagem principal grande (proporção 16:9)
+- Ao clicar: abrir (⭐Chamada-WhatsApp-Personalizada⭐)
+- Full width, altura 500px (desktop) / 300px (mobile)
+- Background preto quando não preencher toda área
+
+---
+
+### BLOCO 3: VALORES = H2 ⭐**DESTAQUE MÁXIMO**⭐
+
+Este é o BLOCO MAIS IMPORTANTE! Deve chamar muita atenção!
+
+**Layout:** Card destacado, centralizado, max-width 800px,
+
+**Elementos (de cima para baixo):**
+
+1. "Lucro Imobiliário"
+   - **Lucro em Destaque:** (maior elemento visual)
+   - Label: "Lucro Imobiliário"
+   - No banco de dados está como descontos em R"R$ 51.638,79" (fonte gigante 3rem, cor verde/dourado)
+   - Background: gradient animado verde → dourado
+   - Animação pulse (crescer/diminuir suavemente)
+   - Borda brilhante
+
+2. **Valor de Avaliação:**
+   - Label: "Valor da Avaliação:"
+   - Valor: "R$ 121.000,00"
+
+3. **Valor de Venda:**
+   - Label: "Valor Mínimo:"
+   - Valor: "R$ 69.361,21"
+
+4. **Desconto:**
+   - Label: "Desconto de:"
+   - Valor: "42,68%"
+
+5. **Botões de Ação:** (3 botões grandes)
+   5.1 - "❤️ Tenho Interesse" (laranja/vermelho, botão principal)
+   5.2 - "📤 Compartilhar" (azul secundário)
+	
+Clicando no botão Compartilhar o visitante vai compartilhar este link pelo WhatsApp)
+Segue texto que será enviado na mensagem de compartilhamento:
+“
+https://venda-imoveis.caixa.gov.br/ + slug do imóvel
+.
+Vi este anúncio no site dos Imóveis da Caixa e acredito que tenha interesse
+.
+📌 RIO DE JANEIRO - TAQUARA - ESTRADA DO RIO GRANDE
+*Desconto de R$ 83.258,21*
+De: R$ 224.672,00 
+Por: R$ 141.413,79
+⚠️ Entrada de R$ 7.000,00 + Financiamento CAIXA”
+.
+Clique no link para ver mais informações
+🧡💙
+"
+
+   5.3 - "💬 WhatsApp" (⭐Chamada-WhatsApp-Personalizada⭐)
+
+**Design:**
+- Card com sombra grande: 0 10px 30px rgba(0,0,0,0.3)
+- Background branco
+- Bordas arredondadas (16px)
+- Espaçamento interno generoso (40px)
+- Ícones grandes e coloridos
+
+---
+
+### BLOCO 5: SOBRE O IMÓVEL
+- Título H2: 🆔 Identificação
+- Box com bordas arredondadas, fundo branco
+- Coluna única
+- Uma seção interna por linha
+**Seções internas:**
+
+1. **📊 Caixa**  (H3)
+Mantem - Número do Imóvel e Modalidade
+Retirar: Vendedor CAIXA ECONÔMICA FEDERAL
+
+2. **📝 Descrição** (H3)
+Mantem todo o conteúdo
+
+3. **🏠 Características** (H3)
+Mantem todo o conteúdo
+
+4. **💰 Regras de Pagamento** (H3)
+Mantem todo o conteúdo
+
+5. **📄 Documentação** (H3)
+Mantem todo o conteúdo
+
+---
+
+### BLOCO 6: CENTRAL DE INTELIGÊNCIA (Área Restrita)
+- Título H2: "📊 Cálculos do Investidor"
+- Background Black Piano
+
+1 **Estado inicial (bloqueado):**
+- Formulário de login:
+Campos de captura
+(Nome + Sobrenome) + WhatssApp + Email
+Principal Interesse
+MORAR - REVENDER - ALUGAR
+- Mensagem:
+Faça seu cadastro gratuito para ter informações exclusivas sobre 
+os valores a serem gastos e sobre as previsões de lucro de cada perfil de compra
+- Botão grande centralizado: 
+Linha 1: enviar cadastro para
+Linha 2:"🔒 DESBLOQUEAR VISUALIZAÇÃO 🔒"
+
+
+2 **Estado desbloqueado (após autenticação):**
+
+Aparece uma SANFONA dentro do bloco
+- Coluna única
+- Uma seção interna por linha
+
+**Seções internas:**
+Título: Comprando para Morar
+Conteúdo:
+- Coluna única
+📊 Resultados Estratégicos
+Imóvel: [imovel-caixa-numero]
+Com base no perfil deste imóvel, aqui estão as projeções financeiras
+para quem deseja comprar para morar:
+
+📊Compra à Vista
+
+Valor de Avaliação:R$[imovel-caixa-valor-avaliacao]
+Valor de Venda: R${imovel-caixa-valor-venda]
+% de desconto:R$[imovel-caixa-valor-desconto-percentual]
+
+LUCRO IMEDIATO
+Finalizando esta negociação você já tem de imediato um Lucro imobiliário no
+valor de R$[imovel-caixa-valor-desconto-moeda]. 
+
+Mas além do pagamento do preço do imóvel você também fica responsável pelas despesas de Registro e ITBI que tem valor aproximado de R$[compra-registro] que são pagos ao (cartório). Cada cartório cobra um prçeo diferente. Como está é uma despesa que você teria comprando em qualquer outra midalidade eu não vou levar ela em consideração na análise que estou te fornecendo.
+
+LUCRO EXCLUSIVO PARA OS IMÓVEIS DA CAIXA
+Se você estivesse comprando através de um leilão ainda teria que pagar a comissão do leiloeiro no valor de R$[honorario-leiloeiro] e se você comprasse este imóvel no mercado imobiliário tradicional teria que pagar as despesas de corretagem no valor de R$[honorarios-corretagem].
+
+Hoje a CAIXA te ajuda nesta compra, nossa imobiliária por ser oficialmente credenciada pela CAIXA, a CAIXA é que nos paga um valor pela prestação do serviço realizado. Esses valores de comissão ja cobrem toda ou grande parte dos custos da docuemntação.
+
+
+📊Compra Financiada
+
+Os Imóveis da Caixa são os únicos do mercado imóbiliário que podem ser comprados com uma entrada mínima de 5% do valor de venda do imóvel então se você estivesse comprando este imóvel hoja no mercado imobiliário tradicional você estia pagando cerca de R$[compra-financiamento-entrada-normal] porém hoje você só vai pagar um boleto do Valor mínimo de Entrada R$[compra-financimento entrada] e por já estar comprando por um prçeo muito abaixo do normal a sua Prestação fica bem Reduzida R$[compra-financiamento-prestação]
+
+Na documentação você terá alguns créscimos que são calculaos pelos cartórios.
+
+
+
+
+
+
+
+02
+Título: Comprando para Vender
+📊 Resultados Estratégicos
+Com base no perfil deste imóvel, aqui estão as projeções financeiras detalhadas para sua tomada de decisão.
+
+03
+Título: Comprando para Alugar
+📊 Resultados Estratégicos
+Com base no perfil deste imóvel, aqui estão as projeções financeiras detalhadas para sua tomada de decisão.
+
+
+
+
+03
+Título: Comprando para Alugar
+📊 Resultados Estratégicos
+
+DESPESAS EXTRAS
+- Serviço de Despachante
+Você também pode ter algumas despesas que são opcionais, você pode contratar um Despachante R$[compra-despachante] para agilizar todo o registro do imóvel e o pagamento das despesas de condominio e IPTU. No contrato de compra, você tem um prazo de apresentação de RGI e IPTU do imóvel em seu nome.
+
+Se optar por fazer esta contratação, fique atento! A maioria dos despachantes entendem que o serviço deles termina quanto toda documentação está no seu nome, no caso dos imóveis da CAIXA ainda tem o pagamento das despesas de acordo com o que vem informando na Proposta de Compra.
+
+- Desocupação
+A desocupação do imóvel sempre é um assunto polêmico porque as informações de misturam, a desocupação de um imóvel de leilão judicial é bem complicada realmente e isso se dá por vários motivos que não vem ao caso.
+
+A desocupação de um imóvel de propriedade do banco é muito mais simples e na grande maioria das vezes o imóvel está ocupado na data da compra e após notificação o ocupante libera o imóvel sem termos que aciopnar ele na justiça, algumas vezes ele sai sozinho e em outras negociamos a desocupação amigável.
+
+Mas se for necessá acionar o judiciário você pode ter uma despesa em torno de R$[compra-desocupacao] dependendo principalmente do advogado que vai contratar.
+
+Saiba que de acordo com a Lei de Alienação Fiduciária de Imóveis (Lei nº 9.514/1997), especificamente no Artigo 30 (com a redação atualizada pela recente Lei nº 14.711/2023 - Marco Legal das Garantias):
+
+Art. 30. É assegurada ao fiduciário, ao seu cessionário ou aos seus sucessores, inclusive ao adquirente do imóvel por força do leilão público de que tratam os arts. 26-A, 27 e 27-A, a reintegração na posse do imóvel, que será concedida liminarmente, para desocupação no prazo de 60 (sessenta) dias, desde que comprovada a consolidação da propriedade em seu nome, na forma prevista no art. 26 desta Lei.
+
+Apenas o RGI comprova a consolidação da propriedade, nem Escritura nem outro docoumento é válido para ser usado na "reintegração na posse".
+
+- Despeas de Condomínio
+Você deverá prestar atenção porque estas regras mudam o tempo todo, tem épocas que a CAIXA paga toda a dívida e em outros tempos ela paga uma parte, mediante comprovação. da dívida.
+
+- Tributos
+Qauando falamso de IPTU, podemos seguir o mesmo procedimento que as despesas de condomínio.
+Quanto a outros "tributos" como taxa de incêmdio, laudemio, lixo ou qualquer outro, fica por conta do comprador.
+* Custos calculados com base em alíquotas médias para este tipo de imóvel e região.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Tabela com 5 linhas:
+  - Valor de Compra: R$ {valor}
+  - Custos de Reforma: R$ {reforma}
+  - Valor de Mercado: R$ {mercado}
+  - **Lucro Líquido Previsto:** R$ {lucro} (em destaque)
+  - ROI: {percentual}%
+- Gráfico visual (barras ou pizza)
+
+---
+
+### BLOCO 7: FORMAS DE PAGAMENTO
+- Título: "💳 Formas de Pagamento" (H2)
+- Sub-título: "FORMAS DE PAGAMENTO ACEITAS"
+- Texto explicativo (2-3 parágrafos)
+- Box com borda colorida
+
+---
+
+### BLOCO 8: DESPESAS
+- Título: "💸 Regras para Pagamento das Despesas" (H2)
+- Aviso em amarelo: "⚠️ Esta informação poderá ser alterada a qualquer momento"
+- Texto explicativo sobre condomínio e tributos
+- Background levemente amarelado
+
+---
+
+### BLOCO 9: INFORMAÇÕES ADICIONAIS
+- Título: "ℹ️ Informações Adicionais" (H2)
+- Texto com informações extras (gravame, penhora, etc.)
+- Só aparece se houver conteúdo
+- Ícone de alerta laranja
+
+---
+
+### BLOCO 10: DÚVIDAS FREQUENTES
+- Título: "❓ Dúvidas Frequentes" (H2)
+- Accordion/Sanfona (todas fechadas inicialmente)
+- Cada item tem:
+  - Pergunta (clicável)
+  - Ícone + ou − (animado)
+  - Resposta (expandível)
+- 8-12 perguntas
+- Transição suave ao abrir/fechar
+
+---
+
+### BLOCO 11: LOCALIZAÇÃO
+- Título: "📍 Localização" (H2)
+- Layout: 2 colunas (50% cada)
+
+**Coluna Esquerda:**
+- Endereço completo
+- Cidade
+- Estado
+- Bairro
+- Botão: "🗺️ Ver no Mapa"
+
+**Coluna Direita:**
+- Mapa do Google Maps incorporado
+- Altura: 400px
+- Bordas arredondadas
+
+**Mobile:** Empilhado (endereço em cima, mapa embaixo)
+
+---
+
+
+---
+
+### BLOCO 13: CONTATO
+- Título H2:  "Agendamento"
+- Título :  Solicitar atendimento
+- Formulário com campos:
+  - Nome completo
+  - E-mail
+  - WhatsApp
+  - Interesse:(Comprar para Moradia / Comprar para Revender / Comprar para Alugar)
+  - Horário preferencial (08às12 / 12às16 / 16às20)
+  - reCAPTCHA
+  - Botão: "Enviar Mensagem"
+- Observações:
+Ao enviar este formulário, você declara estar ciente de que:
+# Para efetuar uma compra financiada é preciso ter uma aprovação antecipada de crédito antes de fazer uma proposta de compra.
+# Os Imóveis da Caixa são imóveis retomados de acordo com a Lei 9512 que regula o processo de alienação fiduciária.
+# Os Imóveis da Caixa só podem ser financiados pela Caixa e que não aceitam carta de consórcio.
+- Layout: 2 colunas (desktop) / 1 coluna (mobile)
+- Validação visual nos campos
+
+⚠️ ao enviar o formulário⚠️ 
+1. vamos gravar todos os campos na tabela [leads]
+2. visitante vai para uma página de confirmação, onde futuramente ele passará a ser rastreado
+3. visitante é enviado
+
+
+---
+
+### BLOCO 14: IMÓVEIS SEMELHANTES
+- Título H2: Imóveis Semelhantes
+- Grid de 3 cards lado a lado
+
+**Cada card:**
+- Foto do imóvel (proporção 4:3)
+- Título H3: "Desconto em R$"
+- Localização: "📍 {cidade} - {uf}"
+- "{tipo} - {bairro}"
+- Preço: "💰 R$ {valor de venda}"
+- Desconto: "🎁 {percentual}% OFF"
+- Botão: "Ver Detalhes"
+- Hover: elevar card com sombra
+
+**Mobile:** 1 card por linha
+
+---
+
+### BLOCO 15: HISTÓRICO = H2
+- Título H2: Atualizações
+- Tabela responsiva em colunas:
+  - Data
+  - Valor de Avaliação
+  - Valor de Venda
+  - Financiamento (Sim/Não)
+  - FGTS (Sim/Não)
+  - Desconto em R$
+  - Selo da oportunidade
+- Zebra striping (linhas alternadas)
+- Scroll horizontal em mobile
+
+---
+
+### BLOCO 16: SANFONA Pergunta Frequentes
+- Título H2: Perguntas Freguentes
+- Vai acessar o link:
+https://imoveisdacaixa.com.br/casa-a-venda-em-jacarepagua-no-rio-de-janeiro-rj-1555530630855/
+Vai extrair todo o conteúdo de Dúvidas Frequentes, na nossa página todas as abas da sanfona ficam fechadas, abrem quando clicadas e se outra aba for aberta ela se fecha automaticamente
+
+
+---
+
+
+### BLOCO 17: GOOGLE MAPS
+- Título H2: Mapa de Localização
+- Vai carregar o mapa da localização do imóvel
+
+---
+
+
+### BLOCO 18: REGIÃO
+- Título H2: Localização
+- Vai carregas todas informações da tabela CEPS
+
+---
+
+### BLOCO 19: WHATSAPP FLUTUANTE)
+- Título H2: Atendimento
+- Teremos a imagem na pasta imagens/FaleComigo.png, flutuante, centralizada na parte inferior da página e que fica disponível para clique o tempo todo; é o conceito de atendimento em um clique.
+Esta imagem servirá como Botão WhatsApp. 
+(⭐Chamada-WhatsApp-Personalizada⭐)
+
+

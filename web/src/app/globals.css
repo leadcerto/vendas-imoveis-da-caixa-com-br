@@ -1,20 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0b;
-  --foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #111827;
   
-  /* Caixa Econômica Color Palette */
-  --caixa-azul: #003D7A;
-  --caixa-azul-brilhante: #0056b3;
-  --caixa-amarelo: #FDB913;
-  --cor-sucesso: #28A745;
-  --cor-destaque: #FF6B35;
-  --cor-aviso: #FFC107;
-  --cor-texto: #333333;
+  /* Caixa Econômica Color Palette (Official) */
+  --caixa-azul: #005CA9;
+  --caixa-azul-marinho: #003870;
+  --caixa-laranja: #F9B200;
+  --caixa-amarelo: #fdb913;
+  --caixa-bg-gray: #D2DBE0;
   --cor-texto-claro: #777777;
   --cor-fundo: #F8F9FA;
-  --cor-borda: #334155;
+  --cor-borda: #E2E8F0;
   
   /* Typography */
   --font-sans: var(--font-roboto), system-ui, sans-serif;
@@ -47,7 +45,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0b;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -124,10 +122,41 @@ h1, h2, h3, h4, h5, h6 {
   padding-bottom: 24px;
 }
 
-.bloco-container {
-  @apply space-y-20 py-20;
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.section-title {
-  @apply text-2xl md:text-3xl font-black mb-10 flex items-center justify-center gap-3 text-center;
+.glass-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.card-gradient {
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.05), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 40%);
 }

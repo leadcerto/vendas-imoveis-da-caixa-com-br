@@ -14,39 +14,52 @@ function SearchResultsContent() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const pageSize = 12;
+  const pageSize = 9;
 
   // Filters State
   const [filters, setFilters] = useState({
     q: searchParams.get('q') || '',
     uf: searchParams.get('uf') || '',
     cidade: searchParams.get('cidade') || '',
+    bairros: searchParams.get('bairros') || '',
     tipo: searchParams.get('tipo') || '',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
+    onlyFinancing: searchParams.get('onlyFinancing') === 'true',
   });
 
   const fetchProperties = async () => {
     setLoading(true);
     let query = supabase
-      .from('imoveis_caixa')
-      .select('*', { count: 'exact' });
+      .from('imoveis')
+      .select('*, tipos_imovel(nome)', { count: 'exact' });
 
     if (filters.q) {
-      query = query.or(`bairro.ilike.%${filters.q}%,cidade.ilike.%${filters.q}%,endereco.ilike.%${filters.q}%`);
+      query = query.or(`imovel_caixa_endereco_bairro.ilike.%${filters.q}%,imovel_caixa_endereco_cidade.ilike.%${filters.q}%,imovel_caixa_endereco_csv.ilike.%${filters.q}%`);
     }
-    if (filters.uf) query = query.eq('uf', filters.uf);
-    if (filters.cidade) query = query.ilike('cidade', `%${filters.cidade}%`);
-    if (filters.tipo) query = query.eq('tipo_imovel', filters.tipo);
-    if (filters.minPrice) query = query.gte('preco_venda', filters.minPrice);
-    if (filters.maxPrice) query = query.lte('preco_venda', filters.maxPrice);
+    if (filters.uf) query = query.eq('imovel_caixa_endereco_uf_sigla', filters.uf);
+    if (filters.cidade) query = query.eq('imovel_caixa_endereco_cidade', filters.cidade);
+    
+    // Multiple Bairros support
+    if (filters.bairros) {
+      const bairroList = filters.bairros.split(',');
+      query = query.in('imovel_caixa_endereco_bairro', bairroList);
+    }
+
+    if (filters.tipo) query = query.eq('id_tipo_imovel_caixa', filters.tipo);
+    if (filters.minPrice) query = query.gte('imovel_caixa_valor_venda', filters.minPrice);
+    if (filters.maxPrice) query = query.lte('imovel_caixa_valor_venda', filters.maxPrice);
+    
+    // Financing filter
+    if (filters.onlyFinancing) {
+      query = query.eq('imovel_caixa_pagamento_financiamento', true);
+    }
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     const { data, count, error } = await query
-      .order('nivel_destaque', { ascending: false })
-      .order('desconto_percentual', { ascending: false })
+      .order('imovel_caixa_valor_desconto_moeda', { ascending: false })
       .range(from, to);
 
     if (!error && data) {
@@ -61,150 +74,110 @@ function SearchResultsContent() {
   }, [page, filters]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target as HTMLInputElement;
+    const checked = (e.target as HTMLInputElement).checked;
+    
+    setFilters(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
     setPage(1);
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <WhatsAppFloating />
-      {/* Header */}
-      <nav className="border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <IoSearchOutline size={18} />
-            </div>
-            <span className="font-bold text-lg hidden sm:inline">Imóveis <span className="text-blue-500">Caixa</span></span>
-          </Link>
-          
-          <div className="flex-1 max-w-xl mx-4">
-            <div className="relative">
-              <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input 
-                name="q"
-                value={filters.q}
-                onChange={handleFilterChange}
-                placeholder="Buscar por bairro ou cidade..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 outline-none focus:border-blue-500/50 transition-all text-sm"
-              />
-            </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <IoFilterOutline size={20} />
-            </button>
+      <main className="max-w-7xl mx-auto px-4 py-12">
+        {/* Results Info */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-12 bg-gray-50 p-6 rounded-[32px] border border-gray-100/50">
+          <p className="text-sm font-medium text-gray-500">
+            Mostrando <span className="text-gray-900 font-black">{properties.length}</span> de <span className="text-gray-900 font-black">{total}</span> oportunidades encontradas para sua busca.
+          </p>
+          <div className="flex items-center gap-3">
+             <span className="text-[10px] font-black text-[#005CA9] uppercase tracking-widest px-3 py-1 bg-white rounded-full border border-gray-200 shadow-sm">
+               Rio de Janeiro
+             </span>
           </div>
         </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <aside className="w-full md:w-64 space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="font-bold mb-4 flex items-center gap-2">
-              <IoFilterOutline className="text-blue-500" /> Filtros
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">Estado (UF)</label>
-                <select 
-                  name="uf"
-                  value={filters.uf}
-                  onChange={handleFilterChange}
-                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-blue-500/50"
-                >
-                  <option value="">Todos</option>
-                  {['SP', 'RJ', 'MG', 'ES', 'PR', 'SC', 'RS', 'BA', 'PE', 'CE', 'DF'].map(uf => (
-                    <option key={uf} value={uf}>{uf}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">Preço Máximo</label>
-                <input 
-                  type="number"
-                  name="maxPrice"
-                  value={filters.maxPrice}
-                  onChange={handleFilterChange}
-                  placeholder="Até R$..."
-                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-blue-500/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2 block">Tipo do Imóvel</label>
-                <select 
-                  name="tipo"
-                  value={filters.tipo}
-                  onChange={handleFilterChange}
-                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-blue-500/50"
-                >
-                  <option value="">Todos</option>
-                  <option value="Apartamento">Apartamento</option>
-                  <option value="Casa">Casa</option>
-                  <option value="Terreno">Terreno</option>
-                  <option value="Comercial">Comercial</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </aside>
 
         {/* Results Grid */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-8">
-            <p className="text-sm text-gray-400">
-              Mostrando <span className="text-white font-bold">{properties.length}</span> de <span className="text-white font-bold">{total}</span> oportunidades encontradas.
-            </p>
-          </div>
-
+        <div className="w-full">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="h-96 bg-white/5 rounded-3xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+                <div key={i} className="h-[450px] bg-gray-50 rounded-3xl" />
               ))}
             </div>
           ) : properties.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {properties.map(p => (
-                  <PropertyCard key={p.numero_imovel} property={p} />
+                  <PropertyCard 
+                    key={p.imoveis_id} 
+                    property={{
+                      ...p,
+                      id: p.imoveis_id,
+                      numero_imovel: p.imovel_caixa_numero,
+                      uf: p.imovel_caixa_endereco_uf_sigla,
+                      cidade: p.imovel_caixa_endereco_cidade,
+                      bairro: p.imovel_caixa_endereco_bairro,
+                      preco_venda: p.imovel_caixa_valor_venda,
+                      valor_avaliacao: p.imovel_caixa_valor_avaliacao,
+                      desconto: p.imovel_caixa_valor_desconto_percentual,
+                      desconto_moeda: p.imovel_caixa_valor_desconto_moeda,
+                      aceita_financiamento: p.imovel_caixa_pagamento_financiamento,
+                      descricao: p.imovel_caixa_descricao_csv || p.imovel_caixa_post_descricao,
+                      url_imagem: p.imovel_caixa_link_imagem,
+                      tipo_imovel: (p.tipos_imovel as any)?.nome || 'Imóvel',
+                      post_link_permanente: p.imovel_caixa_post_link_permanente
+                    }} 
+                  />
                 ))}
               </div>
 
               {/* Pagination */}
               {total > pageSize && (
-                <div className="mt-12 flex items-center justify-center gap-4">
+                <div className="mt-16 flex items-center justify-center gap-6">
                   <button 
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-30 hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-600 uppercase tracking-widest disabled:opacity-30 hover:border-[#005CA9]/30 hover:text-[#005CA9] transition-all shadow-sm"
                   >
-                    <IoChevronBackOutline size={20} />
+                    <IoChevronBackOutline size={18} />
+                    Anterior
                   </button>
-                  <span className="text-sm font-bold">Página {page}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-12 h-12 flex items-center justify-center bg-[#005CA9] text-white rounded-xl text-sm font-black shadow-lg shadow-[#005CA9]/20">
+                      {page}
+                    </span>
+                    <span className="text-gray-400 font-bold">/</span>
+                    <span className="text-gray-900 font-black">{Math.ceil(total / pageSize)}</span>
+                  </div>
                   <button 
                     onClick={() => setPage(p => p + 1)}
                     disabled={page * pageSize >= total}
-                    className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-30 hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl text-[10px] font-black text-gray-600 uppercase tracking-widest disabled:opacity-30 hover:border-[#005CA9]/30 hover:text-[#005CA9] transition-all shadow-sm"
                   >
-                    <IoChevronForwardOutline size={20} />
+                    Próximo
+                    <IoChevronForwardOutline size={18} />
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-32 text-center">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                <IoSearchOutline size={32} className="text-gray-600" />
+            <div className="flex flex-col items-center justify-center py-40 text-center">
+              <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                <IoSearchOutline size={40} className="text-gray-300" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Nenhum imóvel encontrado</h3>
-              <p className="text-gray-500 max-w-xs">Tente ajustar seus filtros ou buscar por outra região.</p>
+              <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Nenhum imóvel encontrado</h3>
+              <p className="text-gray-500 max-w-sm font-medium">Não encontramos resultados para seus filtros atuais. Tente buscar em outras cidades ou redefinir suas preferências.</p>
+              <button 
+                onClick={() => setFilters({ q: '', uf: 'RJ', cidade: '', bairros: '', tipo: '', minPrice: '', maxPrice: '', onlyFinancing: false })}
+                className="mt-8 px-8 py-3 bg-[#005CA9] text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-[#005CA9]/20 hover:scale-105 transition-all"
+              >
+                Limpar todos os filtros
+              </button>
             </div>
           )}
         </div>
@@ -215,7 +188,7 @@ function SearchResultsContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center text-white">Carregando portal...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center font-black text-[#005CA9] uppercase tracking-widest">Carregando portal oficial...</div>}>
       <SearchResultsContent />
     </Suspense>
   );

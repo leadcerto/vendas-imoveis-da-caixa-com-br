@@ -1,23 +1,59 @@
 "use client";
 
-import { IoLogoWhatsapp } from 'react-icons/io5';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useWhatsApp } from '../context/WhatsAppContext';
 
 export default function WhatsAppFloating() {
-  const whatsappNumber = "5521997882950";
-  const message = encodeURIComponent("Olá! Gostaria de falar com um consultor sobre os imóveis da Caixa.");
+  const pathname = usePathname();
+  const { whatsAppData } = useWhatsApp();
+  const phone = "5521978822950";
+  
+  const [currentUrl, setCurrentUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href);
+    }
+  }, [pathname]);
+
+  const getWhatsAppLink = () => {
+    const baseUrl = `https://wa.me/${phone}?text=`;
+    
+    let message = "";
+    if (whatsAppData.propertyNumber && whatsAppData.bairro && whatsAppData.cidade) {
+      // Message for property pages
+      message = `. 📌 Olá! Tenho interesse no Imóvel da Caixa número *${whatsAppData.propertyNumber}* localizado em *${whatsAppData.bairro}* - *${whatsAppData.cidade}*`;
+    } else {
+      // Message for general pages
+      message = `. 📌 Olá! Visitei o site de vocês e preciso de ajuda\n.\n[${currentUrl}]`;
+    }
+    
+    return baseUrl + encodeURIComponent(message);
+  };
 
   return (
-    <a 
-      href={`https://wa.me/${whatsappNumber}?text=${message}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-[9999] w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-green-400 transition-all active:scale-95 group animate-pulse"
-      title="Falar no WhatsApp"
-    >
-      <IoLogoWhatsapp size={40} />
-      <span className="absolute right-full mr-4 bg-white text-gray-900 px-4 py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">
-        Dúvidas? Fale conosco!
-      </span>
-    </a>
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] pointer-events-none flex justify-center pb-6">
+      <div className="pointer-events-auto">
+        <a 
+          href={getWhatsAppLink()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block transition-transform duration-300 hover:scale-105 active:scale-95 group"
+          title="Falar no WhatsApp"
+        >
+          <div className="relative">
+            {/* Soft Glow beneath the button */}
+            <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <img 
+              src="/FaleComigo.png" 
+              alt="Atendimento WhatsApp" 
+              className="h-[60px] md:h-[80px] w-auto shadow-[0_10px_30px_rgba(0,0,0,0.3)] rounded-lg"
+            />
+          </div>
+        </a>
+      </div>
+    </div>
   );
 }

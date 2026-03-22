@@ -1,0 +1,57 @@
+🎨 PROMPT PARA CRIAÇÃO DO DESIGN - CABEÇALHO E RODAPÉ DAS PAGINAS DOS IMÓVEIS
+
+
+### BLOCO CABEÇALHO
+1 LINHA COM 3 COLUNAS
+FFUNDO BRANCO
+
+COLUNA ESQUERDA
+- Título H2: Venda de Imóveis da Caixa
+- Alinhamento a Esquerda
+- Azul Marinho
+COLUNA MEIO
+- Botão para página inicial
+(https://venda.imoveisdacaixa.com.br/
+- Alinhamento Central
+- Laranja
+
+COLUNA DIREITA
+- Hora do servidor
+- Alinhamento a Direita
+- Azul Marinho
+
+
+
+### BLOCO RODAPE
+1 LINHA COM 3 COLUNAS
+COLUNA ESQUERDA
+- Título H2: Links
+- Alinhamento a esquerda
+Título: Imóveis da Caixa
+💙Treinamentos (https://imoveisdacaixa.com.br/treinamentos/
+🧡Busca de Imóveis (https://venda.imoveisdacaixa.com.br/
+💙FGTS (https://www.fgts.gov.br/)
+🧡Privacidade (https://imoveisdacaixa.com.br/privacidade/
+💙Imobiliária Credenciada da Caixa
+Imóveis da Caixa LTDA
+CNPJ 50.563.863/0001-45
+CRECI-PJ 10.234/RJ
+🧡Copyright © 2020 Todos os direitos reservados
+
+COLUNA MEIO
+- Vazia
+- mantenha este espaço
+
+COLUNA DIREITA
+- Título: Nossos Serviços
+- Alinhamento a esquerda
+Documentação Imobiliária (https://imoveisdacaixa.com.br/documentacao-imobiliaria/)
+Avaliação Pericial (https://imoveisdacaixa.com.br/avaliacao-pericial/)
+Parceria em Arrematações (https://imoveisdacaixa.com.br/parceria-arrematacoes/)
+- Título: Quem somos
+Missão (https://imoveisdacaixa.com.br/quem-somos/#missao)
+Valores (https://imoveisdacaixa.com.br/quem-somos/#valores)
+Metas (https://imoveisdacaixa.com.br/quem-somos/#metas)
+Leo Leão (https://imoveisdacaixa.com.br/leo-leao/)
+
+

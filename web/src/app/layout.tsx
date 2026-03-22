@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   description: "Encontre as melhores oportunidades de leilão e venda direta da Caixa com descontos exclusivos e análise de lucro.",
 };
 
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { WhatsAppProvider } from "@/context/WhatsAppContext";
+import WhatsAppFloating from "@/components/WhatsAppFloating";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,9 +32,16 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${montserrat.variable} ${roboto.variable} antialiased font-sans`}
+        className={`${montserrat.variable} ${roboto.variable} antialiased font-sans flex flex-col min-h-screen`}
       >
-        {children}
+        <WhatsAppProvider>
+          <Header />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+          <WhatsAppFloating />
+        </WhatsAppProvider>
       </body>
     </html>
   );

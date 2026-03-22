@@ -33,17 +33,12 @@ export default function BuscaImoveis() {
       
       if (count) setPropertiesCount(count);
 
-      // Fetch Cities in RJ
-      const { data: citiesData } = await supabase
-        .from('imoveis')
-        .select('imovel_caixa_endereco_cidade')
-        .eq('imovel_caixa_endereco_uf_sigla', 'RJ')
-        .not('imovel_caixa_endereco_cidade', 'is', null)
-        .order('imovel_caixa_endereco_cidade', { ascending: true });
+      // Fetch Cities in RJ using RPC for efficiency and to bypass limits
+      const { data: citiesData, error: citiesError } = await supabase
+        .rpc('get_unique_cities', { uf_sigla_param: 'RJ' });
       
       if (citiesData) {
-        const uniqueCities = Array.from(new Set(citiesData.map(c => c.imovel_caixa_endereco_cidade)));
-        setCities(uniqueCities);
+        setCities(citiesData.map((c: any) => c.cidade));
       }
     };
     fetchInitialData();
@@ -57,17 +52,14 @@ export default function BuscaImoveis() {
         return;
       }
       setLoadingBairros(true);
-      const { data } = await supabase
-        .from('imoveis')
-        .select('imovel_caixa_endereco_bairro')
-        .eq('imovel_caixa_endereco_cidade', selectedCity)
-        .eq('imovel_caixa_endereco_uf_sigla', 'RJ')
-        .not('imovel_caixa_endereco_bairro', 'is', null)
-        .order('imovel_caixa_endereco_bairro', { ascending: true });
+      const { data, error } = await supabase
+        .rpc('get_unique_bairros', { 
+          uf_sigla_param: 'RJ', 
+          city_name_param: selectedCity 
+        });
       
       if (data) {
-        const uniqueBairros = Array.from(new Set(data.map(b => b.imovel_caixa_endereco_bairro)));
-        setBairros(uniqueBairros);
+        setBairros(data.map((b: any) => b.bairro));
       }
       setLoadingBairros(false);
     };

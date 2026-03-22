@@ -1,0 +1,15 @@
+# Docker Ignore
+node_modules
+.next
+out
+build
+.git
+.github
+.env*
+trabalho/
+automation/
+*.png
+*.jpg
+*.jpeg
+!FaleComigo.png
+!ImagemDestaque.jpg

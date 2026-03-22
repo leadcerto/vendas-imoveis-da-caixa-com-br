@@ -100,29 +100,8 @@ export default function BuscaImoveis() {
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#005CA9]/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#F9B200]/5 blur-[120px] rounded-full pointer-events-none" />
 
-      {/* Hero Header */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 pt-24 pb-12 text-center">
-        <div className="max-w-4xl mx-auto">
-          {/* Real-time Monitoring Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#005CA9]/10 rounded-full mb-8 animate-in fade-in slide-in-from-top-4 duration-1000">
-            <div className="w-2 h-2 bg-[#005CA9] rounded-full animate-pulse" />
-            <span className="text-xs font-black text-[#005CA9] uppercase tracking-widest">
-              Monitorando em tempo real: <span className="text-lg ml-1">{propertiesCount?.toLocaleString('pt-BR') || '9.944'}</span> imóveis
-            </span>
-          </div>
-
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] mb-8 text-[#005CA9]">
-            Encontre o imóvel dos seus <span className="text-[#F9B200]">sonhos</span> com descontos da Caixa.
-          </h1>
-          <p className="text-xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-            Plataforma inteligente de busca <br />
-            Imóveis em Todo Estado do Rio de Janeiro
-          </p>
-        </div>
-      </section>
-
       {/* Advanced Search Interface */}
-      <section className="relative z-20 max-w-5xl mx-auto px-8">
+      <section className="relative z-20 max-w-5xl mx-auto px-8 pt-12 md:pt-20">
         <form onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[40px] shadow-2xl p-8 md:p-12 space-y-12 transition-all hover:border-[#005CA9]/20">
           
           {/* Step 1: City & Bairro */}

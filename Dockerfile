@@ -9,7 +9,8 @@ WORKDIR /app
 # Install dependencies
 # Coolify runs build from the root, so we copy from web/
 COPY web/package.json web/package-lock.json* ./
-RUN npm ci
+# We need devDependencies (like typescript) to build, but NODE_ENV is often set to production
+RUN npm ci --include=dev
 
 # Rebuild the source code
 FROM base AS builder
@@ -21,6 +22,7 @@ COPY web/. .
 # Next.js collects completely anonymous telemetry data about general usage.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
+# Ensure devDependencies are available for parsing next.config.ts
 RUN npm run build
 
 # Production image, copy all the files and run next

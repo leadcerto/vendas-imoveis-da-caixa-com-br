@@ -51,31 +51,31 @@ function SearchResultsContent() {
       .select('*', { count: 'exact' });
 
     if (filters.q) {
-      query = query.or(`neighborhood.ilike.%${filters.q}%,city.ilike.%${filters.q}%,full_address.ilike.%${filters.q}%`);
+      query = query.or(`bairro_nome.ilike.%${filters.q}%,cidade_nome.ilike.%${filters.q}%,endereco.ilike.%${filters.q}%`);
     }
-    if (filters.uf) query = query.eq('state', filters.uf);
-    if (filters.cidade) query = query.eq('city', filters.cidade);
+    if (filters.uf) query = query.eq('uf_sigla', filters.uf);
+    if (filters.cidade) query = query.eq('cidade_nome', filters.cidade);
     
     // Multiple Bairros support
     if (filters.bairros) {
       const bairroList = filters.bairros.split(',');
-      query = query.in('neighborhood', bairroList);
+      query = query.in('bairro_nome', bairroList);
     }
 
-    if (filters.tipo) query = query.eq('type_id', filters.tipo);
-    if (filters.minPrice) query = query.gte('price', filters.minPrice);
-    if (filters.maxPrice) query = query.lte('price', filters.maxPrice);
+    if (filters.tipo) query = query.eq('tipo_imovel_id', filters.tipo);
+    if (filters.minPrice) query = query.gte('preco', filters.minPrice);
+    if (filters.maxPrice) query = query.lte('preco', filters.maxPrice);
     
     // Financing filter
     if (filters.onlyFinancing) {
-      query = query.eq('allows_financing', true);
+      query = query.eq('modalidade', 'Financiamento'); // Ajustar conforme o valor real no banco se necessário
     }
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     const { data, count, error } = await query
-      .order('discount_amount', { ascending: false })
+      .order('desconto', { ascending: false })
       .range(from, to);
 
     if (error) {
@@ -144,18 +144,18 @@ function SearchResultsContent() {
                     property={{
                       ...p,
                       id: p.id,
-                      numero_imovel: p.property_number,
-                      uf: p.state,
-                      cidade: p.city,
-                      bairro: p.neighborhood,
-                      preco_venda: p.price,
-                      valor_avaliacao: p.appraisal_value,
-                      desconto: p.discount_percent,
-                      desconto_moeda: p.discount_amount,
-                      aceita_financiamento: p.allows_financing,
-                      descricao: p.description,
-                      url_imagem: p.main_image,
-                      tipo_imovel: p.type_name || 'Imóvel',
+                      numero_imovel: p.numero_imovel,
+                      uf: p.uf_sigla,
+                      cidade: p.cidade_nome,
+                      bairro: p.bairro_nome,
+                      preco_venda: p.preco,
+                      valor_avaliacao: p.valor_avaliacao,
+                      desconto: p.desconto,
+                      desconto_moeda: p.preco_anterior ? (Number(p.preco_anterior) - Number(p.preco)) : null,
+                      aceita_financiamento: p.modalidade?.toLowerCase().includes('financiamento'),
+                      descricao: p.post_descricao,
+                      url_imagem: p.foto,
+                      tipo_imovel: p.tipo_nome || 'Imóvel',
                       post_link_permanente: p.slug
                     }} 
                   />

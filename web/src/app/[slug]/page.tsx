@@ -10,64 +10,10 @@ interface Props {
  * Funçao para buscar os dados do imóvel no servidor usando o SLUG
  */
 async function getPropertyData(slug: string) {
-  // 1. Dados Básicos do Imóvel buscando pelo SLUG
+  // 1. Dados Básicos do Imóvel buscando pelo SLUG na view 'properties'
   const { data: property, error } = await supabase
-    .from('imoveis')
-    .select(`
-      imoveis_id,
-      imovel_caixa_numero,
-      imovel_caixa_endereco_uf_sigla,
-      imovel_caixa_endereco_cidade,
-      imovel_caixa_endereco_bairro,
-      imovel_caixa_endereco_csv,
-      imovel_caixa_pagamento_fgts,
-      imovel_caixa_descricao_csv,
-      imovel_caixa_modalidade,
-      imovel_caixa_link_imagem,
-      imovel_caixa_link_matricula,
-      imovel_caixa_link_acesso,
-      imovel_caixa_post_titulo,
-      imovel_caixa_post_descricao,
-      imovel_caixa_post_imagem_destaque,
-      imovel_caixa_post_link_permanente,
-      imovel_caixa_post_palavra_chave,
-      id_tipo_imovel_caixa,
-      tipos_imovel (nome),
-      imovel_caixa_descricao_quartos,
-      imovel_caixa_descricao_area_privativa,
-      imovel_caixa_descricao_area_total,
-      imovel_caixa_descricao_area_do_terreno,
-      imovel_caixa_descricao_area_servico,
-      imovel_caixa_descricao_churrasqueira,
-      *,
-      ceps_imovel (
-        cep_resumo,
-        cep_info_localizacao,
-        cep_m2_loft,
-        cep_m2_quinto_andar,
-        cep_m2_fipe_zap,
-        cep_status
-      ),
-      grupos_imovel (
-        id,
-        nome,
-        valor_minimo,
-        valor_maximo,
-        compra_financiamento_entrada_caixa,
-        compra_financiamento_entrada_normal,
-        compra_financiamento_prestacao,
-        compra_registro,
-        compra_despachante,
-        compra_desocupacao,
-        honorario_leiloeiro,
-        honorarios_corretagem,
-        honorarios_corretagem_caixa,
-        venda_reforma,
-        venda_impostos,
-        aluguel_roi_comum,
-        aluguel_roi_caixa
-      )
-    `)
+    .from('properties')
+    .select('*')
     .eq('slug', slug)
     .single();
 
@@ -75,53 +21,51 @@ async function getPropertyData(slug: string) {
     return null;
   }
 
-  // 2. Histórico (Normalizado) - Buscamos primeiro para usar o mais recente na normalização do imóvel
+  // 2. Histórico - Já temos o preço atual na view, mas buscamos o histórico para o gráfico
   const { data: historyRaw } = await supabase
     .from('atualizacoes_imovel')
     .select('*')
     .eq('imovel_id', property.id)
     .order('imovel_caixa_criacao', { ascending: false });
 
-  const latestUpdate = historyRaw?.[0] || null;
-
-  const id = String(property.id || '');
-
   // Normalização extremamente robusta utilizando os campos da VIEW
   const normalizedProp = {
     ...property,
     id: String(property.id || ''),
-    property_number: property.property_number?.toString() || '',
-    imovel_caixa_numero: property.property_number?.toString() || '', // Compatibilidade
-    title: property.title || '',
-    price: Number(property.price || 0),
-    valuation_value: Number(property.appraisal_value || 0),
-    discount_percent: Number(property.discount_percent || 0),
-    imovel_caixa_pagamento_financiamento: property.allows_financing || false,
-    imovel_caixa_pagamento_fgts: property.allows_fgts || false,
-    imovel_caixa_pagamento_anotacoes: property.payment_notes || '',
-    imovel_caixa_pagamento_condominio: Number(property.condo_debt || 0),
-    imovel_caixa_criacao: latestUpdate?.imovel_caixa_criacao,
-    bedrooms: Number(property.bedrooms || 0),
-    bathrooms: Number(property.bathrooms || 0),
-    garage: Number(property.garage || 0), // Este campo deve vir da view também, se adicionado
-    private_area: property.private_area ? Number(property.private_area) : null, // Mapeado via view futuramente se necessário
-    total_area: property.area_size ? Number(property.area_size) : null,
-    land_area: property.land_area ? Number(property.land_area) : null,
-    property_type: property.property_type || 'Imóvel',
-    neighborhood: property.neighborhood || '',
-    city: property.city || '',
-    state: property.state || '',
-    address: property.full_address || '',
-    description: property.description || '',
-    imovel_caixa_link_imagem: property.main_image || '',
-    url_imagem: property.main_image || '',
-    imovel_caixa_post_imagem_destaque: property.imovel_caixa_post_imagem_destaque || '',
+    property_number: property.numero_imovel?.toString() || '',
+    imovel_caixa_numero: property.numero_imovel?.toString() || '', // Compatibilidade
+    title: property.post_titulo || '',
+    price: Number(property.preco || 0),
+    valuation_value: Number(property.valor_avaliacao || 0),
+    discount_percent: Number(property.desconto || 0),
+    imovel_caixa_pagamento_financiamento: property.modalidade?.toLowerCase().includes('financiamento') || false,
+    imovel_caixa_pagamento_fgts: property.permite_fgts || false,
+    imovel_caixa_pagamento_anotacoes: property.anotacoes_pagamento || '',
+    imovel_caixa_pagamento_condominio: Number(property.debito_condominio || 0),
+    imovel_caixa_criacao: historyRaw?.[0]?.imovel_caixa_criacao,
+    bedrooms: Number(property.quartos || 0),
+    bathrooms: Number(property.banheiros || 0),
+    garage: Number(property.vagas || 0),
+    private_area: property.area_privativa ? Number(property.area_privativa) : null,
+    total_area: property.area_total ? Number(property.area_total) : null,
+    land_area: property.area_terreno ? Number(property.area_terreno) : null,
+    property_type: property.tipo_nome || 'Imóvel',
+    neighborhood: property.bairro_nome || '',
+    city: property.cidade_nome || '',
+    state: property.uf_sigla || '',
+    address: property.endereco || '',
+    description: property.post_descricao || '',
+    imovel_caixa_link_imagem: property.foto || '',
+    url_imagem: property.foto || '',
+    imovel_caixa_post_imagem_destaque: property.post_imagem_destaque || '',
     post_link_permanente: property.slug || '',
-    investment_params: property.grupos_imovel ? [property.grupos_imovel] : [],
-    // Garantir que campos de ID em joins não causem erro de serialização BigInt
-    tipos_imovel: property.tipos_imovel ? { ...property.tipos_imovel, id: String((property.tipos_imovel as any).id || '') } : null,
-    grupos_imovel: property.grupos_imovel ? { ...property.grupos_imovel, id: String((property.grupos_imovel as any).id || '') } : null,
-    ceps_imovel: property.ceps_imovel ? { ...property.ceps_imovel, id: String((property.ceps_imovel as any).id || '') } : null
+    // Campos de cartório
+    cartorio_matricula: property.cartorio_matricula,
+    cartorio_comarca: property.cartorio_comarca,
+    cartorio_oficio: property.cartorio_oficio,
+    cartorio_inscricao: property.cartorio_inscricao,
+    cartorio_averbacao: property.cartorio_averbacao,
+    link_matricula: property.link_matricula
   };
 
   const history = historyRaw?.map(h => ({
@@ -131,26 +75,26 @@ async function getPropertyData(slug: string) {
     source: h.imovel_caixa_modalidade || 'Atualização'
   })) || [];
 
-  // 3. Imóveis Similares (Normalizado)
+  // 3. Imóveis Similares (Normalizado via VIEW)
   const { data: similarRaw } = await supabase
-    .from('imoveis')
-    .select('*, tipos_imovel(nome)')
-    .eq('id_tipo_imovel_caixa', property.id_tipo_imovel_caixa)
-    .neq('imoveis_id', id)
+    .from('properties')
+    .select('*')
+    .eq('tipo_imovel_id', property.tipo_imovel_id)
+    .neq('id', property.id)
     .limit(3);
 
   const similar = similarRaw?.map(s => ({
-    id: String(s.imoveis_id),
-    numero_imovel: s.imovel_caixa_numero?.toString(),
-    bairro: s.imovel_caixa_endereco_bairro,
-    cidade: s.imovel_caixa_endereco_cidade,
-    state: s.imovel_caixa_endereco_uf_sigla,
-    preco_venda: Number(s.imovel_caixa_valor_venda || 0),
-    valor_avaliacao: Number(s.imovel_caixa_valor_avaliacao || 0),
-    desconto: Number(s.imovel_caixa_valor_desconto_percentual || 0),
-    url_imagem: s.imovel_caixa_link_imagem,
-    post_link_permanente: s.imovel_caixa_post_link_permanente,
-    tipo_imovel: (s.tipos_imovel as any)?.nome || 'Imóvel'
+    id: String(s.id),
+    numero_imovel: s.numero_imovel?.toString(),
+    bairro: s.bairro_nome,
+    cidade: s.cidade_nome,
+    state: s.uf_sigla,
+    preco_venda: Number(s.preco || 0),
+    valor_avaliacao: Number(s.valor_avaliacao || 0),
+    desconto: Number(s.desconto || 0),
+    url_imagem: s.foto,
+    post_link_permanente: s.slug,
+    tipo_imovel: s.tipo_nome || 'Imóvel'
   })) || [];
 
   return { 

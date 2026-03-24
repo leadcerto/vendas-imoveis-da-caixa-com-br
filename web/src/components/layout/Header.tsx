@@ -20,7 +20,9 @@ export default function Header() {
   }, []);
 
   const pathname = usePathname();
-  if (pathname === '/busca-imoveis') return null;
+  const isAdminRoute = pathname?.startsWith('/dashboard') || pathname === '/site-login';
+  
+  if (pathname === '/busca-imoveis' || isAdminRoute) return null;
 
   return (
     <header className="w-full bg-white border-b border-gray-100 py-6 px-4 md:px-8">

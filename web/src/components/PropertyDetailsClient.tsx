@@ -165,9 +165,13 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
         </section>
         
         {/* BLOCO 1: TÍTULO (H1) */}
-        <section className="py-10 text-left">
-          <h1 className="text-xl md:text-2xl font-black text-gray-900 font-montserrat tracking-tight leading-tight">
-             🧡💙 {`${(property.property_type || 'Imóvel')} ${(property.neighborhood || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}, ${(property.city || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()).replace('Sao Goncalo', 'São Gonçalo')} - ${property.state} ${property.property_number}`}
+        <section className="py-12 text-left">
+          <div className="flex items-center gap-3 mb-4">
+             <div className="w-1.5 h-1.5 bg-[#F9B200] rounded-full animate-pulse"></div>
+             <span className="text-[10px] font-black text-[#005CA9] uppercase tracking-[0.4em]">Oportunidade Exclusiva</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 font-montserrat tracking-tight leading-tight uppercase">
+             {`${(property.property_type || 'Imóvel')} ${(property.neighborhood || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}, ${(property.city || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()).replace('Sao Goncalo', 'São Gonçalo')} - ${property.state} ${property.property_number}`}
           </h1>
         </section>
 
@@ -214,54 +218,65 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
         </section>
 
         {/* BLOCO 3: VALORES (H2) - ⭐DESTAQUE MÁXIMO⭐ */}
-        <section className="py-20 md:py-32 flex justify-center">
-          <div className="w-full max-w-[800px] bg-white rounded-[16px] p-10 md:p-16 shadow-[0_10px_30px_rgba(0,0,0,0.3)] border border-gray-100 text-center space-y-12">
+        <section className="py-24 md:py-40 flex justify-center">
+          <div className="relative w-full max-w-[900px]">
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#005CA9]/5 to-transparent blur-3xl -z-10 rounded-full" />
             
-            <div className="space-y-4">
-              <span className="text-xl font-black text-gray-500 uppercase tracking-widest block">Lucro Imobiliário</span>
-              <div className="relative inline-block group">
-                 <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-yellow-400 to-green-400 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse"></div>
-                 <h2 className="text-5xl md:text-[5rem] font-black tracking-tighter text-[#16a34a] drop-shadow-sm leading-none animate-pulse">
-                   R$ {discountValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                 </h2>
+            <div className="bg-white rounded-[50px] p-12 md:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-50 text-center space-y-16 transition-all hover:shadow-[0_60px_120px_-30px_rgba(0,92,169,0.15)]">
+              
+              <div className="space-y-6">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-[0.5em] block">Potencial de Lucro Imediato</span>
+                <div className="relative inline-block group">
+                   <div className="absolute inset-x-0 -bottom-2 h-8 bg-green-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                   <h2 className="text-6xl md:text-[6.5rem] font-black tracking-tighter text-[#16a34a] leading-none transition-transform duration-700 group-hover:scale-105">
+                     R$ {discountValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                   </h2>
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 gap-6 max-w-md mx-auto pt-8 border-t border-gray-100">
-               <div className="flex justify-between items-center px-6">
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Valor da Avaliação:</span>
-                  <span className="text-xl font-black text-gray-800">R$ {property.valuation_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-               </div>
-               <div className="flex justify-between items-center px-6">
-                  <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Valor Mínimo:</span>
-                  <span className="text-xl font-black text-[#005CA9]">R$ {property.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-               </div>
-               <div className="flex justify-between items-center px-6 bg-orange-50 py-4 rounded-2xl border border-orange-100">
-                  <span className="text-sm font-black text-[#F9B200] uppercase tracking-widest uppercase">Desconto de:</span>
-                  <span className="text-3xl font-black text-[#F9B200]">{discountPercent}%</span>
-               </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-2xl mx-auto pt-12 border-t border-gray-100">
+                 <div className="space-y-2 text-left md:text-center">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Avaliação do Banco</span>
+                    <span className="text-2xl font-black text-gray-800">R$ {property.valuation_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                 </div>
+                 <div className="space-y-2 text-right md:text-center">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Valor de Venda</span>
+                    <span className="text-2xl font-black text-[#005CA9]">R$ {property.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                 </div>
+              </div>
+              
+              <div className="inline-flex items-center gap-4 bg-orange-50 px-8 py-4 rounded-[20px] border border-orange-100/50">
+                 <span className="text-xs font-black text-[#F9B200] uppercase tracking-widest">Desconto Exclusivo:</span>
+                 <span className="text-4xl font-black text-[#F9B200] tracking-tighter">{discountPercent}%</span>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-10">
-               <button 
-                 onClick={() => window.open(getWhatsAppLink(), '_blank')}
-                 className="py-5 bg-[#F9B200] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#F9B200]/20 hover:scale-105 active:scale-95 transition-all"
-               >
-                 ❤️ Tenho Interesse
-               </button>
-               <button 
-                 onClick={() => window.open(getShareLink(), '_blank')}
-                 className="py-5 bg-[#005CA9] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#005CA9]/20 hover:scale-105 active:scale-95 transition-all"
-               >
-                 📤 Compartilhar
-               </button>
-               <button 
-                 onClick={() => window.open(getWhatsAppLink(), '_blank')}
-                 className="py-5 bg-[#25D366] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-green-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-               >
-                 <IoLogoWhatsapp size={16} />
-                 WhatsApp
-               </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12">
+                 <button 
+                   onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                   className="group py-6 bg-[#F9B200] hover:bg-[#FF9D2E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                 >
+                   <span className="opacity-50 text-[8px]">Eu Quero</span>
+                   <span>❤️ Tenho Interesse</span>
+                 </button>
+                 <button 
+                   onClick={() => window.open(getShareLink(), '_blank')}
+                   className="group py-6 bg-[#005CA9] hover:bg-[#004a87] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                 >
+                   <span className="opacity-50 text-[8px]">Enviar Para</span>
+                   <span>📤 Compartilhar</span>
+                 </button>
+                 <button 
+                   onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                   className="group py-6 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-green-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                 >
+                   <span className="opacity-50 text-[8px]">Falar com</span>
+                   <span className="flex items-center gap-2">
+                     <IoLogoWhatsapp size={16} />
+                     WhatsApp
+                   </span>
+                 </button>
+              </div>
             </div>
           </div>
         </section>
@@ -387,7 +402,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                   <div className="bg-gray-50 p-6 rounded-3xl space-y-4">
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-xs font-bold text-gray-600 uppercase">Financiamento</span>
-                      {property.description?.toLowerCase().includes('não aceita financiamento') ? (
+                      {property.imovel_caixa_pagamento_financiamento === false ? (
                         <span className="flex items-center gap-1 text-red-500 font-black text-[10px] uppercase"><IoCloseCircleOutline /> Não</span>
                       ) : (
                         <span className="flex items-center gap-1 text-green-500 font-black text-[10px] uppercase"><IoCheckmarkCircleOutline /> Sim</span>
@@ -395,25 +410,38 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
                       <span className="text-xs font-bold text-gray-600 uppercase">FGTS</span>
-                      {property.description?.toLowerCase().includes('não aceita fgts') ? (
+                      {property.imovel_caixa_pagamento_fgts === false ? (
                         <span className="flex items-center gap-1 text-red-500 font-black text-[10px] uppercase"><IoCloseCircleOutline /> Não</span>
                       ) : (
                         <span className="flex items-center gap-1 text-green-500 font-black text-[10px] uppercase"><IoCheckmarkCircleOutline /> Sim</span>
                       )}
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    {property.regra_condominio && (
+                    <div className="space-y-4">
+                    {(property.regra_condominio || property.imovel_caixa_pagamento_condominio > 0) && (
                       <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-2">📌 Débitos de Condomínio</span>
+                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mb-1">📌 Débitos de Condomínio</span>
+                        {property.imovel_caixa_pagamento_condominio > 0 && (
+                          <p className="text-lg font-black text-blue-800 mb-1">
+                            R$ {property.imovel_caixa_pagamento_condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
                         <p className="text-[11px] font-bold text-gray-500 leading-relaxed italic">
-                          {property.regra_condominio}
+                          {property.regra_condominio || 'Débitos de responsabilidade da Caixa conforme edital.'}
+                        </p>
+                      </div>
+                    )}
+                    {property.imovel_caixa_pagamento_anotacoes && (
+                      <div className="p-4 bg-orange-50/50 rounded-2xl border-[#F9B200]/50 border">
+                        <span className="text-[9px] font-black text-[#F9B200] uppercase tracking-widest block mb-2">⚠️ Observações Importantes</span>
+                        <p className="text-[11px] font-bold text-gray-700 leading-relaxed uppercase tracking-tighter">
+                          {property.imovel_caixa_pagamento_anotacoes}
                         </p>
                       </div>
                     )}
                     {property.regra_iptu && (
-                      <div className="p-4 bg-orange-50/50 rounded-2xl border-[#F9B200]/50 border">
-                        <span className="text-[9px] font-black text-[#F9B200] uppercase tracking-widest block mb-2">📌 Débitos de IPTU</span>
+                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block mb-2">📌 Débitos de IPTU</span>
                         <p className="text-[11px] font-bold text-gray-500 leading-relaxed italic">
                           {property.regra_iptu}
                         </p>

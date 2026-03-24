@@ -17,19 +17,15 @@ OUTPUT_DIR = r"c:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\web\publi
 def clean_name(name):
     if not name:
         return ""
-    # Lowercase, remove special characters, replace spaces with underscores
+    # Lowercase, replace accents, and remove special characters
     name = str(name).lower()
-    # Replace common accented characters
     name = name.replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
     name = name.replace('ã', 'a').replace('õ', 'o').replace('ê', 'e').replace('ô', 'o')
     name = name.replace('ç', 'c')
-    # Remove everything except alphanumeric and spaces
+    # Keep only alphanumeric and spaces, then replace spaces with hyphens
     name = re.sub(r'[^a-z0-9\s]', '', name)
-    # Replace spaces with underscores
-    name = name.replace(' ', '_')
-    # Remove multiple underscores
-    name = re.sub(r'_+', '_', name)
-    return name.strip('_')
+    name = re.sub(r'\s+', '-', name.strip())
+    return name
 
 def process_images():
     if not os.path.exists(OUTPUT_DIR):
@@ -53,7 +49,7 @@ def process_images():
             print(f"Fetching properties {offset} to {offset + batch_size}...")
             try:
                 response = supabase.table("imoveis").select(
-                    "imoveis_id, imovel_caixa_numero, imovel_caixa_endereco_bairro, imovel_caixa_endereco_cidade, imovel_caixa_endereco_uf_sigla, id_tipo_imovel_caixa, tipos_imovel(nome)"
+                    "imoveis_id, imovel_caixa_post_link_permanente"
                 ).range(offset, offset + batch_size - 1).execute()
                 
                 properties = response.data
@@ -67,20 +63,13 @@ def process_images():
             print(f"Processing {len(properties)} properties...")
 
             for prop in properties:
-                tipo_row = prop.get('tipos_imovel')
-                tipo_name = tipo_row.get('nome', 'imovel') if isinstance(tipo_row, dict) else 'imovel'
-                
-                tipo = clean_name(tipo_name)
-                bairro = clean_name(prop.get('imovel_caixa_endereco_bairro', ''))
-                cidade = clean_name(prop.get('imovel_caixa_endereco_cidade', ''))
-                uf = clean_name(prop.get('imovel_caixa_endereco_uf_sigla', ''))
-                numero = str(prop.get('imovel_caixa_numero', ''))
-
-                if not numero:
+                slug = prop.get('imovel_caixa_post_link_permanente')
+                if not slug:
+                    print(f"Skipping property {prop.get('imoveis_id')} - no slug")
                     continue
-
-                # Format: tipo-bairro-cidade-uf-numero.jpg
-                filename = f"{tipo}-{bairro}-{cidade}-{uf}-{numero}.jpg"
+                
+                # Format: slug.jpg
+                filename = f"{slug}.jpg"
                 output_path = os.path.join(OUTPUT_DIR, filename)
 
                 if not os.path.exists(output_path):

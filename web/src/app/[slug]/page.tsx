@@ -20,17 +20,12 @@ async function getPropertyData(slug: string) {
       imovel_caixa_endereco_cidade,
       imovel_caixa_endereco_bairro,
       imovel_caixa_endereco_csv,
-      imovel_caixa_valor_venda,
-      imovel_caixa_valor_avaliacao,
-      imovel_caixa_valor_desconto_percentual,
-      imovel_caixa_pagamento_financiamento,
       imovel_caixa_pagamento_fgts,
       imovel_caixa_descricao_csv,
       imovel_caixa_modalidade,
       imovel_caixa_link_imagem,
       imovel_caixa_link_matricula,
       imovel_caixa_link_acesso,
-      imovel_caixa_criacao,
       imovel_caixa_post_titulo,
       imovel_caixa_post_descricao,
       imovel_caixa_post_imagem_destaque,
@@ -44,25 +39,7 @@ async function getPropertyData(slug: string) {
       imovel_caixa_descricao_area_do_terreno,
       imovel_caixa_descricao_area_servico,
       imovel_caixa_descricao_churrasqueira,
-      imovel_caixa_descricao_cozinha,
-      imovel_caixa_descricao_garagem,
-      imovel_caixa_descricao_piscina,
-      imovel_caixa_descricao_sala,
-      imovel_caixa_descricao_terraco,
-      imovel_caixa_descricao_varanda,
-      imovel_caixa_descricao_wc_banheiro,
-      imovel_caixa_cartorio_averbacao,
-      imovel_caixa_cartorio_comarca,
-      imovel_caixa_cartorio_inscricao_imobiliaria,
-      imovel_caixa_cartorio_matricula,
-      imovel_caixa_cartorio_oficio,
-      imovel_caixa_link_matricula,
-      imovel_caixa_venda_timer,
-      imovel_caixa_venda_vendedor,
-      imovel_caixa_venda_tipo_oficial,
-      imovel_caixa_regra_condominio,
-      imovel_caixa_regra_iptu,
-      imovel_caixa_galeria_fotos,
+      *,
       ceps_imovel (
         cep_resumo,
         cep_info_localizacao,
@@ -91,77 +68,67 @@ async function getPropertyData(slug: string) {
         aluguel_roi_caixa
       )
     `)
-    .eq('imovel_caixa_post_link_permanente', slug)
+    .eq('slug', slug)
     .single();
 
   if (!property) {
     return null;
   }
 
-  const id = property.imoveis_id;
-
-  // Normalização para o componente PropertyDetailsClient
-  // Nota: O componente espera nomes de campos em inglês/camelCase em algumas partes
-  const normalizedProp = {
-    ...property,
-    id: property.imoveis_id,
-    title: property.imovel_caixa_post_titulo,
-    property_number: property.imovel_caixa_numero,
-    valuation_value: Number(property.imovel_caixa_valor_avaliacao),
-    price: Number(property.imovel_caixa_valor_venda),
-    neighborhood: property.imovel_caixa_endereco_bairro,
-    city: property.imovel_caixa_endereco_cidade,
-    state: property.imovel_caixa_endereco_uf_sigla,
-    address: property.imovel_caixa_endereco_csv,
-    description: property.imovel_caixa_descricao_csv,
-    property_type: (property.tipos_imovel as any)?.nome || 'Imóvel',
-    sale_modality: property.imovel_caixa_modalidade,
-    bedrooms: property.imovel_caixa_descricao_quartos,
-    private_area: property.imovel_caixa_descricao_area_privativa,
-    total_area: property.imovel_caixa_descricao_area_total,
-    land_area: property.imovel_caixa_descricao_area_do_terreno,
-    service_area: property.imovel_caixa_descricao_area_servico,
-    barbecue: property.imovel_caixa_descricao_churrasqueira,
-    kitchen: property.imovel_caixa_descricao_cozinha,
-    garage: property.imovel_caixa_descricao_garagem,
-    pool: property.imovel_caixa_descricao_piscina,
-    living_room: property.imovel_caixa_descricao_sala,
-    terrace: property.imovel_caixa_descricao_terraco,
-    balcony: property.imovel_caixa_descricao_varanda,
-    bathrooms: property.imovel_caixa_descricao_wc_banheiro,
-    cartorio_averbacao: property.imovel_caixa_cartorio_averbacao,
-    cartorio_comarca: property.imovel_caixa_cartorio_comarca,
-    cartorio_inscricao: property.imovel_caixa_cartorio_inscricao_imobiliaria,
-    cartorio_matricula: property.imovel_caixa_cartorio_matricula,
-    cartorio_oficio: property.imovel_caixa_cartorio_oficio,
-    link_matricula: property.imovel_caixa_link_matricula,
-    post_link_permanente: property.imovel_caixa_post_link_permanente,
-    url_imagem: property.imovel_caixa_link_imagem,
-    vendedor: property.imovel_caixa_venda_vendedor,
-    venda_timer: property.imovel_caixa_venda_timer,
-    venda_tipo_oficial: property.imovel_caixa_venda_tipo_oficial,
-    regra_condominio: property.imovel_caixa_regra_condominio,
-    regra_iptu: property.imovel_caixa_regra_iptu,
-    galeria_fotos: property.imovel_caixa_galeria_fotos,
-    enrichment: property.ceps_imovel,
-    investment_params: property.grupos_imovel,
-    // Original DB field names for safety
-    imovel_caixa_numero: property.imovel_caixa_numero,
-    imovel_caixa_post_link_permanente: property.imovel_caixa_post_link_permanente
-  };
-
-  // 2. Histórico (Normalizado)
+  // 2. Histórico (Normalizado) - Buscamos primeiro para usar o mais recente na normalização do imóvel
   const { data: historyRaw } = await supabase
     .from('atualizacoes_imovel')
     .select('*')
-    .eq('id_imovel_caixa', property.imovel_caixa_numero)
-    .order('data_atualizacao', { ascending: false });
+    .eq('imovel_id', property.id)
+    .order('imovel_caixa_criacao', { ascending: false });
+
+  const latestUpdate = historyRaw?.[0] || null;
+
+  const id = String(property.id || '');
+
+  // Normalização extremamente robusta utilizando os campos da VIEW
+  const normalizedProp = {
+    ...property,
+    id: String(property.id || ''),
+    property_number: property.property_number?.toString() || '',
+    imovel_caixa_numero: property.property_number?.toString() || '', // Compatibilidade
+    title: property.title || '',
+    price: Number(property.price || 0),
+    valuation_value: Number(property.appraisal_value || 0),
+    discount_percent: Number(property.discount_percent || 0),
+    imovel_caixa_pagamento_financiamento: property.allows_financing || false,
+    imovel_caixa_pagamento_fgts: property.allows_fgts || false,
+    imovel_caixa_pagamento_anotacoes: property.payment_notes || '',
+    imovel_caixa_pagamento_condominio: Number(property.condo_debt || 0),
+    imovel_caixa_criacao: latestUpdate?.imovel_caixa_criacao,
+    bedrooms: Number(property.bedrooms || 0),
+    bathrooms: Number(property.bathrooms || 0),
+    garage: Number(property.garage || 0), // Este campo deve vir da view também, se adicionado
+    private_area: property.private_area ? Number(property.private_area) : null, // Mapeado via view futuramente se necessário
+    total_area: property.area_size ? Number(property.area_size) : null,
+    land_area: property.land_area ? Number(property.land_area) : null,
+    property_type: property.property_type || 'Imóvel',
+    neighborhood: property.neighborhood || '',
+    city: property.city || '',
+    state: property.state || '',
+    address: property.full_address || '',
+    description: property.description || '',
+    imovel_caixa_link_imagem: property.main_image || '',
+    url_imagem: property.main_image || '',
+    imovel_caixa_post_imagem_destaque: property.imovel_caixa_post_imagem_destaque || '',
+    post_link_permanente: property.slug || '',
+    investment_params: property.grupos_imovel ? [property.grupos_imovel] : [],
+    // Garantir que campos de ID em joins não causem erro de serialização BigInt
+    tipos_imovel: property.tipos_imovel ? { ...property.tipos_imovel, id: String((property.tipos_imovel as any).id || '') } : null,
+    grupos_imovel: property.grupos_imovel ? { ...property.grupos_imovel, id: String((property.grupos_imovel as any).id || '') } : null,
+    ceps_imovel: property.ceps_imovel ? { ...property.ceps_imovel, id: String((property.ceps_imovel as any).id || '') } : null
+  };
 
   const history = historyRaw?.map(h => ({
-    date_update: h.data_atualizacao,
-    sale_value: Number(h.valor_venda),
-    valuation_value: Number(h.valor_avaliacao),
-    source: h.origem_caixa ? 'Caixa' : 'Sistema'
+    date_update: h.imovel_caixa_criacao,
+    sale_value: Number(h.imovel_caixa_valor_venda || 0),
+    valuation_value: Number(h.imovel_caixa_valor_avaliacao || 0),
+    source: h.imovel_caixa_modalidade || 'Atualização'
   })) || [];
 
   // 3. Imóveis Similares (Normalizado)
@@ -173,13 +140,14 @@ async function getPropertyData(slug: string) {
     .limit(3);
 
   const similar = similarRaw?.map(s => ({
-    id: s.imoveis_id,
-    numero_imovel: s.imovel_caixa_numero,
+    id: String(s.imoveis_id),
+    numero_imovel: s.imovel_caixa_numero?.toString(),
     bairro: s.imovel_caixa_endereco_bairro,
     cidade: s.imovel_caixa_endereco_cidade,
-    preco_venda: s.imovel_caixa_valor_venda,
-    valor_avaliacao: s.imovel_caixa_valor_avaliacao,
-    desconto: s.imovel_caixa_valor_desconto_percentual,
+    state: s.imovel_caixa_endereco_uf_sigla,
+    preco_venda: Number(s.imovel_caixa_valor_venda || 0),
+    valor_avaliacao: Number(s.imovel_caixa_valor_avaliacao || 0),
+    desconto: Number(s.imovel_caixa_valor_desconto_percentual || 0),
     url_imagem: s.imovel_caixa_link_imagem,
     post_link_permanente: s.imovel_caixa_post_link_permanente,
     tipo_imovel: (s.tipos_imovel as any)?.nome || 'Imóvel'

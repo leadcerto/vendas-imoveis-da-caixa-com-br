@@ -98,7 +98,10 @@ class LocationResolver:
             cidade_norm = normalize_text(cidade_nome)
             cidade_id = self.cidades.get((uf_id, cidade_norm))
             if cidade_id:
-                bairro_norm = normalize_text(bairro_nome)
+                # Primeiro, usa o normalizador inteligente (regras, mapeamentos, etc)
+                bairro_processado = NORMALIZER.normalize(bairro_nome)
+                bairro_norm = normalize_text(bairro_processado)
+                
                 bairro_id = self.bairros.get((cidade_id, bairro_norm))
                 if not bairro_id:
                     requer_revisao = True
@@ -165,7 +168,10 @@ def extract_features_from_desc(description):
         "imovel_caixa_descricao_piscina": 'piscina' in desc,
         "imovel_caixa_descricao_sala": 'sala' in desc,
         "imovel_caixa_descricao_terraco": 'terraço' in desc or 'terraco' in desc,
-        "imovel_caixa_descricao_varanda": 'varanda' in desc
+        "imovel_caixa_descricao_varanda": 'varanda' in desc,
+        # Campos de pagamento/anotações extraídos da descrição
+        "imovel_caixa_pagamento_condominio": get_num(r'débitos de condomínio no valor de r\$\s*([\d\.,]+)', desc),
+        "imovel_caixa_pagamento_anotacoes": re.search(r'anotações:\s*(.*)', desc, re.I).group(1).strip() if re.search(r'anotações:', desc, re.I) else ""
     }
     
     return features
@@ -335,9 +341,7 @@ def ingest_csv(file_path):
         keyword = f"{tipo_nome} {bairro_seo} {cidade_seo} {uf_seo} {numero}"
         titulo_seo = f"{tipo_nome} em {bairro_seo}, {cidade_seo} - {uf_seo} ({numero})"
         
-        # Featured Image (Social Sharing) - Naming coincides with the post title as requested
-        image_filename = f"{titulo_seo}.jpg"
-        image_url_destaque = f"/images/destaque/{image_filename}"
+        image_url_destaque = f"/imagens-destaque/{slug}.jpg"
         
         # Novo Selo de Oportunidade
         if desconto_pct >= 80:
@@ -353,16 +357,9 @@ def ingest_csv(file_path):
         registro_master = {
             "imovel_caixa_numero": numero,
             "imovel_caixa_criacao": str(data_geracao),
-            "imovel_caixa_endereco_uf_sigla": uf_raw,
-            "imovel_caixa_endereco_cidade": cidade_raw,
-            "imovel_caixa_endereco_bairro": bairro_raw,
             "imovel_caixa_endereco_csv": str(row.get(c_endereco, '')).strip() if c_endereco else '',
             "imovel_caixa_valor_venda": valor_venda,
-            "imovel_caixa_valor_avaliacao": valor_avaliacao,
-            "imovel_caixa_valor_desconto_percentual": desconto_pct,
             "imovel_caixa_pagamento_financiamento": financiamento,
-            "imovel_caixa_pagamento_fgts": pagamento_fgts,
-            "imovel_caixa_descricao_csv": desc_raw,
             "imovel_caixa_modalidade": modalidade,
             "imovel_caixa_link_imagem": f"https://venda-imoveis.caixa.gov.br/fotos/F{numero}.jpg",
             "imovel_caixa_link_matricula": f"https://venda-imoveis.caixa.gov.br/editais/matricula/{uf_raw.upper()}/{numero}.pdf",
@@ -406,10 +403,10 @@ def enviar_batch(batch, modalidade, data_geracao, row_example, c_num_example):
         if res.data:
             hist_batch = []
             for item in res.data:
-                valor_venda = item['imovel_caixa_valor_venda']
-                valor_avaliacao = item['imovel_caixa_valor_avaliacao']
-                desconto_pct = item['imovel_caixa_valor_desconto_percentual'] or 0.0
-                selo = item['imovel_caixa_post_selo_oportunidade']
+                valor_venda = item.get('imovel_caixa_valor_venda')
+                valor_avaliacao = item.get('imovel_caixa_valor_avaliacao')
+                desconto_pct = item.get('imovel_caixa_valor_desconto_percentual', 0.0)
+                selo = item.get('imovel_caixa_post_selo_oportunidade')
 
                 hist_batch.append({
                     "imovel_id": item['imoveis_id'],
@@ -421,6 +418,8 @@ def enviar_batch(batch, modalidade, data_geracao, row_example, c_num_example):
                     "imovel_caixa_valor_desconto_moeda": max(0.0, float(valor_avaliacao - valor_venda)),
                     "imovel_caixa_pagamento_financiamento": item['imovel_caixa_pagamento_financiamento'],
                     "imovel_caixa_pagamento_fgts": item['imovel_caixa_pagamento_fgts'],
+                    "imovel_caixa_pagamento_anotacoes": item.get('imovel_caixa_pagamento_anotacoes'),
+                    "imovel_caixa_pagamento_condominio": item.get('imovel_caixa_pagamento_condominio'),
                     "etiqueta_oportunidade": selo,
                     "created_at": datetime.now().isoformat()
                 })

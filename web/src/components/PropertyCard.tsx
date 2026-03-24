@@ -37,7 +37,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <Link href={propertyLink} className="group block h-full">
-      <div className="relative flex flex-col h-full bg-white border border-gray-100 rounded-[40px] overflow-hidden transition-all duration-500 hover:border-[#005CA9]/30 hover:shadow-2xl hover:shadow-[#005CA9]/10">
+      <div className="relative flex flex-col h-full bg-white border border-gray-100 rounded-[40px] overflow-hidden transition-all duration-700 hover:border-[#005CA9]/30 hover:shadow-[0_40px_80px_-20px_rgba(0,92,169,0.15)] active:scale-[0.98]">
         
         {/* Badges Container - Top of the image mask */}
         <div className="absolute top-4 left-4 right-4 z-20 flex items-start justify-between pointer-events-none">
@@ -123,27 +123,36 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               </div>
             </div>
 
-            {/* Lucro Imediato Highlight */}
-            <div className="relative overflow-hidden bg-orange-50/50 rounded-2xl p-4 border border-orange-100/50 group/savings transition-all duration-300">
+            {/* Lucro Imediato Highlight - Glassmorphism */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-orange-50/80 to-white/40 backdrop-blur-sm rounded-3xl p-5 border border-orange-100/50 group/savings transition-all duration-500 hover:shadow-lg hover:shadow-orange-200/20">
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600">
-                    <IoTrendingDownOutline size={18} />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600 shadow-inner">
+                    <IoTrendingDownOutline size={20} />
                   </div>
-                  <span className="text-[11px] font-black text-orange-500 uppercase tracking-wider">Lucro Imediato</span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest leading-none mb-0.5">Lucro Imediato</span>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Oportunidade Única</span>
+                  </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-lg font-black text-black leading-none transition-transform duration-500 group-hover/savings:scale-110 origin-right">
+                  <span className="text-xl font-black text-gray-900 tracking-tighter transition-transform duration-700 group-hover/savings:scale-110 origin-right">
                     {formatCurrency(property.valor_avaliacao - property.preco_venda)}
                   </span>
                 </div>
               </div>
+              {/* Subtle background glow */}
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-orange-500/5 blur-2xl rounded-full" />
             </div>
 
-            {/* CTA Button - SAIBA MAIS - LIGHTER ORANGE */}
-            <button className="w-full py-4 bg-[#FF9D2E] hover:bg-[#FF8C00] text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300 transform active:scale-[0.98] shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 border-b-4 border-[#D97706] flex items-center justify-center gap-2">
-              SAIBA MAIS
-            </button>
+            {/* CTA Button - SAIBA MAIS - PREMIUM ORANGE */}
+            <div className="relative group/btn pt-2">
+              <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-2xl opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500" />
+              <button className="relative w-full py-5 bg-[#FF9D2E] hover:bg-[#F9B200] text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all duration-500 transform active:scale-95 shadow-xl shadow-orange-500/10 border-b-4 border-orange-700/30 flex items-center justify-center gap-2 overflow-hidden">
+                <span className="relative z-10">SAIBA MAIS DETALHES</span>
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 transform translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

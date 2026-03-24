@@ -9,7 +9,9 @@ import {
 
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname === '/busca-imoveis') return null;
+  const isAdminRoute = pathname?.startsWith('/dashboard') || pathname === '/site-login';
+  
+  if (pathname === '/busca-imoveis' || isAdminRoute) return null;
 
   return (
     <footer className="w-full bg-white border-t border-gray-100 py-16 px-4 md:px-8 mt-20">

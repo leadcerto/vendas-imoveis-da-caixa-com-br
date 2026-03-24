@@ -18,7 +18,7 @@ def populate_featured_images():
     while True:
         # Busca em blocos de 1000 (limite do Supabase)
         response = supabase.table("imoveis") \
-            .select("imoveis_id, imovel_caixa_post_titulo") \
+            .select("imoveis_id, imovel_caixa_post_link_permanente") \
             .range(offset, offset + limit - 1) \
             .execute()
         
@@ -28,20 +28,27 @@ def populate_featured_images():
             
         print(f"📊 Processando bloco {offset} a {offset + len(properties)}...")
         
+        updates = []
         for prop in properties:
-            title = prop.get("imovel_caixa_post_titulo", "imovel-caixa")
-            image_filename = f"{title}.jpg"
-            image_url = f"/images/destaque/{image_filename}"
+            slug = prop.get("imovel_caixa_post_link_permanente")
+            if not slug:
+                continue
+                
+            updates.append({
+                "imoveis_id": prop["imoveis_id"],
+                "imovel_caixa_post_imagem_destaque": f"/imagens-destaque/{slug}.jpg"
+            })
             
+        if updates:
             try:
-                supabase.table("imoveis").update({
-                    "imovel_caixa_post_imagem_destaque": image_url
-                }).eq("imoveis_id", prop["imoveis_id"]).execute()
-                total_updated += 1
+                supabase.table("imoveis").upsert(updates, on_conflict="imoveis_id").execute()
+                total_updated += len(updates)
             except Exception as e:
-                print(f"❌ Erro no ID {prop['imoveis_id']}: {e}")
+                print(f"❌ Erro no bloco: {e}")
         
         print(f"✅ {total_updated} imóveis atualizados no total...")
+        if len(properties) < limit:
+            break
         offset += limit
 
     print(f"🏁 Concluído! {total_updated} imagens de destaque configuradas com nomes exatos.")

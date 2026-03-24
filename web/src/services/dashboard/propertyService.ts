@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
 export interface PropertyFilters {
-  city?: string;
-  state?: string;
+  cidade?: string;
+  uf?: string;
   selo?: string;
   modalidade?: string;
   searchTerm?: string;
@@ -18,8 +18,8 @@ export interface Property {
   area_size: number;
   bedrooms: number;
   bathrooms: number;
-  city: string;
-  state: string;
+  cidade: string;
+  uf: string;
   status: string;
   main_image: string;
   selo_oportunidade: string;
@@ -38,17 +38,17 @@ export const propertyService = {
       : '*, ceps_imovel(id, cep_status)';
 
     let query = supabase
-      .from('properties')
+      .from('imoveis')
       .select(selectStr, { count: 'exact' });
 
     // Apply filters
-    if (filters.city) query = query.eq('city', filters.city);
-    if (filters.state) query = query.eq('state', filters.state);
+    if (filters.cidade) query = query.eq('cidade', filters.cidade);
+    if (filters.uf) query = query.eq('uf', filters.uf);
     if (filters.selo) query = query.eq('selo_oportunidade', filters.selo);
     if (filters.modalidade) query = query.eq('status', filters.modalidade);
     
     if (filters.searchTerm) {
-      query = query.or(`title.ilike.%${filters.searchTerm}%,city.ilike.%${filters.searchTerm}%`);
+      query = query.or(`bairro.ilike.%${filters.searchTerm}%,cidade.ilike.%${filters.searchTerm}%,logradouro.ilike.%${filters.searchTerm}%`);
     }
 
     if (filters.hasEnrichment) {

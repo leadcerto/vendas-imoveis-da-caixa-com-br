@@ -43,6 +43,12 @@ interface Imobiliaria {
   imobiliaria_uf_atendimento: string;
 }
 
+interface Estado {
+  id: number;
+  sigla: string;
+  nome: string;
+}
+
 const initialForm: Imobiliaria = {
   imobiliaria_nome: '',
   imobiliaria_whatsapp_numero: '',
@@ -68,14 +74,17 @@ const initialForm: Imobiliaria = {
 
 export default function ImobiliariaManager() {
   const [imobiliarias, setImobiliarias] = useState<Imobiliaria[]>([]);
+  const [estados, setEstados] = useState<Estado[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Imobiliaria>(initialForm);
   const [saving, setSaving] = useState(false);
+  const [imageFiles, setImageFiles] = useState<Record<string, File>>({});
 
   useEffect(() => {
     fetchImobiliarias();
+    fetchEstados();
   }, []);
 
   const fetchImobiliarias = async () => {
@@ -95,6 +104,19 @@ export default function ImobiliariaManager() {
     }
   };
 
+  const fetchEstados = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('estados')
+        .select('id, sigla, nome')
+        .order('nome');
+      if (error) throw error;
+      setEstados(data || []);
+    } catch (error) {
+      console.error('Error fetching estados:', error);
+    }
+  };
+
   const handleEdit = (imob: Imobiliaria) => {
     // Garantir que campos nulos se tornem strings vazias para o formulário
     const sanitizedImob = { ...imob };
@@ -107,20 +129,59 @@ export default function ImobiliariaManager() {
     setForm(sanitizedImob);
     setEditingId(imob.imobiliaria_id || null);
     setShowForm(true);
+    setImageFiles({});
   };
 
   const handleAddNew = () => {
     setForm(initialForm);
     setEditingId(null);
     setShowForm(true);
+    setImageFiles({});
+  };
+
+  const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFiles(prev => ({ ...prev, [field]: file }));
+      
+      // Criar URL temporária para preview
+      const previewUrl = URL.createObjectURL(file);
+      setForm(prev => ({ ...prev, [field]: previewUrl }));
+    }
+  };
+
+  const uploadFile = async (field: string, file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${editingId || 'new'}-${field}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('imobiliarias')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('imobiliarias')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
+      const finalForm = { ...form };
+
+      // Upload de imagens se houver novos arquivos
+      for (const [field, file] of Object.entries(imageFiles)) {
+        const publicUrl = await uploadFile(field, file);
+        (finalForm as any)[field] = publicUrl;
+      }
+
       // Remover o ID do payload para não conflitar com a identidade
-      const { imobiliaria_id, ...payload } = form;
+      const { imobiliaria_id, ...payload } = finalForm;
 
       if (editingId) {
         const { error } = await supabase
@@ -138,6 +199,7 @@ export default function ImobiliariaManager() {
       await fetchImobiliarias();
       setShowForm(false);
       setForm(initialForm);
+      setImageFiles({});
     } catch (error: any) {
       alert('Erro ao salvar: ' + error.message);
     } finally {
@@ -292,12 +354,24 @@ export default function ImobiliariaManager() {
                     value={form.imobiliaria_endereco_cidade}
                     onChange={e => setForm({...form, imobiliaria_endereco_cidade: e.target.value})}
                   />
-                  <Input 
-                    label="Estado (UF)" 
-                    maxLength={2}
-                    value={form.imobiliaria_uf}
-                    onChange={e => setForm({...form, imobiliaria_uf: e.target.value.toUpperCase()})}
-                  />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-[#003870] uppercase ml-1">Estado (UF)</label>
+                    <div className="relative">
+                      <select 
+                        className="w-full h-12 pl-4 pr-10 bg-white border border-gray-100 rounded-2xl appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-[#005CA9]/20 transition-all font-medium"
+                        value={form.imobiliaria_uf}
+                        onChange={e => setForm({...form, imobiliaria_uf: e.target.value})}
+                      >
+                        <option value="">Selecione...</option>
+                        {estados.map(est => (
+                          <option key={est.id} value={est.sigla}>{est.nome} ({est.sigla})</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <IoLocationOutline size={18} />
+                      </div>
+                    </div>
+                  </div>
                   <Input 
                     label="Complemento" 
                     value={form.imobiliaria_endereco_complemento}
@@ -310,28 +384,111 @@ export default function ImobiliariaManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F9B200]">Regra de Atendimento</p>
-                <Input 
-                  label="UF de Atendimento (Ex: RJ, SP)" 
-                  maxLength={2}
-                  required
-                  placeholder="Estado onde a imobiliária atende"
-                  icon={<IoGlobeOutline />}
-                  value={form.imobiliaria_uf_atendimento}
-                  onChange={e => setForm({...form, imobiliaria_uf_atendimento: e.target.value.toUpperCase()})}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-[#003870] uppercase ml-1">UF de Atendimento</label>
+                  <div className="relative">
+                    <select 
+                      className="w-full h-12 pl-4 pr-10 bg-white border border-gray-100 rounded-2xl appearance-none text-sm focus:outline-none focus:ring-2 focus:ring-[#F9B200]/20 transition-all font-medium"
+                      required
+                      value={form.imobiliaria_uf_atendimento}
+                      onChange={e => setForm({...form, imobiliaria_uf_atendimento: e.target.value})}
+                    >
+                      <option value="">Selecione o Estado...</option>
+                      {estados.map(est => (
+                        <option key={est.id} value={est.sigla}>{est.nome} ({est.sigla})</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#F9B200]">
+                      <IoGlobeOutline size={18} />
+                    </div>
+                  </div>
+                </div>
                 <p className="text-[9px] text-gray-400 uppercase tracking-widest leading-relaxed">
                   Os imóveis publicados nesta UF exibirão os dados desta imobiliária para contato.
                 </p>
               </div>
 
               <div className="space-y-6">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#005CA9]">Links de Imagens e Branding</p>
-                <div className="space-y-4">
-                  <Input label="URL Botão WhatsApp (350x100)" icon={<IoImageOutline />} value={form.imobiliaria_whatsapp_botao} onChange={e => setForm({...form, imobiliaria_whatsapp_botao: e.target.value})} />
-                  <div className="grid grid-cols-3 gap-4">
-                    <Input label="150x150" value={form.imobiliaria_img_150x150} onChange={e => setForm({...form, imobiliaria_img_150x150: e.target.value})} />
-                    <Input label="450x450" value={form.imobiliaria_img_450x450} onChange={e => setForm({...form, imobiliaria_img_450x450: e.target.value})} />
-                    <Input label="600x600" value={form.imobiliaria_img_600x600} onChange={e => setForm({...form, imobiliaria_img_600x600: e.target.value})} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#005CA9]">Imagens e Branding</p>
+                <div className="grid grid-cols-2 gap-6">
+                  {/* WhatsApp Botão */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Botão WhatsApp (350x100)</label>
+                    <div className="relative group">
+                      <div className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#005CA9]/30">
+                        {form.imobiliaria_whatsapp_botao ? (
+                          <img src={form.imobiliaria_whatsapp_botao} className="w-full h-full object-contain p-2" alt="Preview WhatsApp" />
+                        ) : (
+                          <IoImageOutline className="text-gray-300" size={32} />
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFileChange('imobiliaria_whatsapp_botao', e)}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Imagem 150x150 */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Logotipo (150x150)</label>
+                    <div className="relative group">
+                      <div className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#005CA9]/30">
+                        {form.imobiliaria_img_150x150 ? (
+                          <img src={form.imobiliaria_img_150x150} className="w-full h-full object-contain p-2" alt="Preview 150" />
+                        ) : (
+                          <IoImageOutline className="text-gray-300" size={32} />
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFileChange('imobiliaria_img_150x150', e)}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Imagem 450x450 */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Banner (450x450)</label>
+                    <div className="relative group">
+                      <div className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#005CA9]/30">
+                        {form.imobiliaria_img_450x450 ? (
+                          <img src={form.imobiliaria_img_450x450} className="w-full h-full object-contain p-2" alt="Preview 450" />
+                        ) : (
+                          <IoImageOutline className="text-gray-300" size={32} />
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFileChange('imobiliaria_img_450x450', e)}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                   {/* Imagem 600x600 */}
+                   <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Extra (600x600)</label>
+                    <div className="relative group">
+                      <div className="w-full h-24 rounded-2xl border-2 border-dashed border-gray-100 bg-gray-50/50 flex flex-col items-center justify-center overflow-hidden transition-all group-hover:border-[#005CA9]/30">
+                        {form.imobiliaria_img_600x600 ? (
+                          <img src={form.imobiliaria_img_600x600} className="w-full h-full object-contain p-2" alt="Preview 600" />
+                        ) : (
+                          <IoImageOutline className="text-gray-300" size={32} />
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFileChange('imobiliaria_img_600x600', e)}
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

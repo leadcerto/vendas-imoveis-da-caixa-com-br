@@ -19,7 +19,18 @@ export default function CSVUpload() {
     setMessage('Iniciando processamento...');
 
     try {
-      // 1. Logar a tentativa na tabela de logs
+      // 1. Upload para o Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${new Date().getTime()}_${file.name}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('csv-caixa')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Logar a tentativa na tabela de logs com o caminho do arquivo
       const { error: logError } = await supabase
         .from('logs_ingestao')
         .insert({
@@ -28,18 +39,18 @@ export default function CSVUpload() {
           total_lidos: 0,
           total_aceitos: 0,
           total_rejeitados: 0,
-          motivos_rejeicao: { info: "Upload via interface premium" }
+          motivos_rejeicao: { 
+            info: "Upload via interface premium",
+            storage_path: filePath 
+          }
         });
 
       if (logError) throw logError;
 
-      // TODO: Implementar lógica real de parser CSV se necessário no futuro
-      
-      setTimeout(() => {
-        setIsUploading(false);
-        setStatus('success');
-        setMessage(`Arquivo "${file.name}" carregado com sucesso. O processamento foi iniciado.`);
-      }, 2000);
+      // Sucesso
+      setIsUploading(false);
+      setStatus('success');
+      setMessage(`Arquivo "${file.name}" carregado com sucesso. O processamento foi iniciado.`);
 
     } catch (error: any) {
       console.error('Upload error:', error);

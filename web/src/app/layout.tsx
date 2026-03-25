@@ -22,7 +22,6 @@ export const metadata: Metadata = {
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { WhatsAppProvider } from "@/context/WhatsAppContext";
-import WhatsAppFloating from "@/components/WhatsAppFloating";
 
 export default function RootLayout({
   children,
@@ -40,7 +39,6 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
-          <WhatsAppFloating />
         </WhatsAppProvider>
       </body>
     </html>

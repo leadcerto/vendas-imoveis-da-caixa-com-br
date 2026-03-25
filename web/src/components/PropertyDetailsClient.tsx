@@ -27,6 +27,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
   const [isCashedIn, setIsCashedIn] = useState(false); // For investor calculations lock
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
   const { setWhatsAppData, resetWhatsAppData } = useWhatsApp();
+  const [imobiliaria, setImobiliaria] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     nome: '',
@@ -36,7 +37,25 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    const fetchImob = async () => {
+      if (!property?.state) return;
+      const { data, error } = await supabase
+        .from('imobiliarias')
+        .select('*')
+        .eq('imobiliaria_uf_atendimento', property.state)
+        .limit(1)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setImobiliaria(data);
+      }
+    };
+    fetchImob();
+  }, [property.state]);
+
   const handleLeadSubmit = async (e: React.FormEvent) => {
+    // ... existing lead submit logic
     e.preventDefault();
     setIsSubmitting(true);
     
@@ -68,14 +87,15 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
     setWhatsAppData({
       propertyNumber: property.property_number,
       bairro: property.neighborhood,
-      cidade: `${property.city}-${property.state}`
+      cidade: `${property.city}-${property.state}`,
+      imobiliaria: imobiliaria
     });
     return () => resetWhatsAppData();
-  }, [property, setWhatsAppData, resetWhatsAppData]);
+  }, [property, imobiliaria, setWhatsAppData, resetWhatsAppData]);
 
   // Helper for Personalized WhatsApp link
   const getWhatsAppLink = (customMessage?: string) => {
-    const phone = "5521978822950";
+    const phone = imobiliaria?.imobiliaria_whatsapp_numero || "5521978822950";
     const baseUrl = "https://wa.me/" + phone + "?text=";
     
     if (customMessage) {
@@ -252,30 +272,41 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12">
-                 <button 
-                   onClick={() => window.open(getWhatsAppLink(), '_blank')}
-                   className="group py-6 bg-[#F9B200] hover:bg-[#FF9D2E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
-                 >
-                   <span className="opacity-50 text-[8px]">Eu Quero</span>
-                   <span>❤️ Tenho Interesse</span>
-                 </button>
-                 <button 
-                   onClick={() => window.open(getShareLink(), '_blank')}
-                   className="group py-6 bg-[#005CA9] hover:bg-[#004a87] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
-                 >
-                   <span className="opacity-50 text-[8px]">Enviar Para</span>
-                   <span>📤 Compartilhar</span>
-                 </button>
-                 <button 
-                   onClick={() => window.open(getWhatsAppLink(), '_blank')}
-                   className="group py-6 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-green-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
-                 >
-                   <span className="opacity-50 text-[8px]">Falar com</span>
-                   <span className="flex items-center gap-2">
-                     <IoLogoWhatsapp size={16} />
-                     WhatsApp
-                   </span>
-                 </button>
+                  {imobiliaria?.imobiliaria_whatsapp_botao ? (
+                    <button 
+                      onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                      className="group overflow-hidden rounded-3xl active:scale-95 transition-all shadow-xl shadow-orange-500/10"
+                    >
+                      <img src={imobiliaria.imobiliaria_whatsapp_botao} alt="WhatsApp" className="w-full h-auto" />
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                      className="group py-6 bg-[#F9B200] hover:bg-[#FF9D2E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                    >
+                      <span className="opacity-50 text-[8px]">Eu Quero</span>
+                      <span>❤️ Tenho Interesse</span>
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={() => window.open(getShareLink(), '_blank')}
+                    className="group py-6 bg-[#005CA9] hover:bg-[#004a87] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                  >
+                    <span className="opacity-50 text-[8px]">Enviar Para</span>
+                    <span>📤 Compartilhar</span>
+                  </button>
+
+                  <button 
+                    onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                    className="group py-6 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-green-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
+                  >
+                    <span className="opacity-50 text-[8px]">Falar com</span>
+                    <span className="flex items-center gap-2">
+                      <IoLogoWhatsapp size={16} />
+                      WhatsApp
+                    </span>
+                  </button>
               </div>
             </div>
           </div>
@@ -1158,6 +1189,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
 
       </main>
 
+      <WhatsAppFloating />
     </div>
   );
 }

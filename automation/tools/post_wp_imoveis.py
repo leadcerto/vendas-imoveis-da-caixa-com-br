@@ -25,7 +25,8 @@ LOTE_POSTAGEM = 1
 # Pausa em segundos entre cada post (respeita o servidor)
 PAUSA_ENTRE_POSTS = 1.5
 # Caminho da Imagem Destaque
-IMAGEM_LOCAL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ImagemDestaque.jpg")
+IMAGEM_LOCAL_PATH = r"c:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\imagens\imagem-destaque\ImagemDestaque.jpg"
+
 
 
 

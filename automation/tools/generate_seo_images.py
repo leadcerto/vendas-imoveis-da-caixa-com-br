@@ -11,7 +11,8 @@ KEY = "sb_publishable_s_f-Can7kPxIKjF1uS8E2g_b5vTJY5u"
 supabase: Client = create_client(URL, KEY)
 
 # Paths
-BASE_IMAGE_PATH = r"c:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\ImagemDestaque.jpg"
+BASE_IMAGE_PATH = r"c:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\imagens\imagem-destaque\ImagemDestaque.jpg"
+
 OUTPUT_DIR = r"c:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\web\public\imagens-destaque"
 
 def clean_name(name):

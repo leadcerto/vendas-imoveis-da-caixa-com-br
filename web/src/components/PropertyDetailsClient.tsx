@@ -84,14 +84,17 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
   };
 
   useEffect(() => {
+    if (!property) return;
+    
     setWhatsAppData({
       propertyNumber: property.property_number,
       bairro: property.neighborhood,
       cidade: `${property.city}-${property.state}`,
       imobiliaria: imobiliaria
     });
+    
     return () => resetWhatsAppData();
-  }, [property, imobiliaria, setWhatsAppData, resetWhatsAppData]);
+  }, [property.property_number, property.neighborhood, property.city, property.state, imobiliaria?.id, setWhatsAppData, resetWhatsAppData]);
 
   // Helper for Personalized WhatsApp link
   const getWhatsAppLink = (customMessage?: string) => {

@@ -1,0 +1,19 @@
+[Pre-Ingestion Backup Summary - 2026-03-25]
+Timestamp: 2026-03-25 18:47:00
+Total Properties in DB: 9944
+Distribution by State:
+- RJ: 9944
+- Others: 0
+
+Latest Update in imoveis: 2026-03-21 11:36:45
+
+Imobiliarias Backed Up:
+1. RJ - Imóveis da Caixa
+2. MG - A NOSSA CAIXA SERVICOS LTDA
+3. ES - PALERMO IMOVEIS LTDADA
+4. RS - Boldi & Silva Consultoria Empresarial Lt
+5. SP - Darshan Demanda Digital
+
+All files in automation/backups/
+- imobiliarias_bak_2026-03-25.json
+- pre_ingestion_summary.txt

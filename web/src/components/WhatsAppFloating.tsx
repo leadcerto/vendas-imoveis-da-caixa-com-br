@@ -8,7 +8,10 @@ export default function WhatsAppFloating() {
   const pathname = usePathname();
   const { whatsAppData } = useWhatsApp();
   if (pathname === '/busca-imoveis') return null;
-  const phone = "5521978822950";
+  
+  const imobiliaria = whatsAppData.imobiliaria;
+  const phone = imobiliaria?.imobiliaria_whatsapp_numero || "5521978822950";
+  const buttonImage = imobiliaria?.imobiliaria_whatsapp_botao || "/FaleComigo.png";
   
   const [currentUrl, setCurrentUrl] = useState("");
 
@@ -48,7 +51,7 @@ export default function WhatsAppFloating() {
             <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
             <img 
-              src="/FaleComigo.png" 
+              src={buttonImage} 
               alt="Atendimento WhatsApp" 
               className="h-[60px] md:h-[80px] w-auto shadow-[0_10px_30px_rgba(0,0,0,0.3)] rounded-lg"
             />

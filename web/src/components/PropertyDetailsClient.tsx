@@ -16,6 +16,7 @@ import WhatsAppFloating from '@/components/WhatsAppFloating';
 import { useWhatsApp } from '@/context/WhatsAppContext';
 import { supabase } from '@/lib/supabase';
 import { getLocalImagePath, getCorrectedCaixaUrl } from '@/lib/imageUtils';
+import { formatWhatsAppLink } from '@/lib/whatsapp';
 
 interface PropertyDetailsProps {
   property: any;
@@ -94,21 +95,19 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
     });
     
     return () => resetWhatsAppData();
-  }, [property.property_number, property.neighborhood, property.city, property.state, imobiliaria?.id, setWhatsAppData, resetWhatsAppData]);
+  }, [property.property_number, property.neighborhood, property.city, property.state, imobiliaria, setWhatsAppData, resetWhatsAppData]);
 
   // Helper for Personalized WhatsApp link
   const getWhatsAppLink = (customMessage?: string) => {
     const phone = imobiliaria?.imobiliaria_whatsapp_numero || "5521978822950";
-    const baseUrl = "https://wa.me/" + phone + "?text=";
     
     if (customMessage) {
-      return baseUrl + encodeURIComponent(customMessage);
+      return formatWhatsAppLink(phone, customMessage);
     }
 
-    const message = encodeURIComponent(
-      `. 📌 Olá! Tenho interesse no Imóvel da Caixa número *${property.property_number}* localizado em *${property.neighborhood}* - *${property.city}-${property.state}*`
-    );
-    return baseUrl + message;
+    const message = `. 📌 Olá! Tenho interesse no Imóvel da Caixa número *${property.property_number}* localizado em *${property.neighborhood}* - *${property.city}-${property.state}*`;
+    
+    return formatWhatsAppLink(phone, message);
   };
 
   const getShareLink = () => {

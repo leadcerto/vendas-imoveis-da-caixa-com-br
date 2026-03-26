@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useWhatsApp } from '../context/WhatsAppContext';
+import { formatWhatsAppLink } from '@/lib/whatsapp';
 
 export default function WhatsAppFloating() {
   const pathname = usePathname();
@@ -22,8 +23,6 @@ export default function WhatsAppFloating() {
   }, [pathname]);
 
   const getWhatsAppLink = () => {
-    const baseUrl = `https://wa.me/${phone}?text=`;
-    
     let message = "";
     if (whatsAppData.propertyNumber && whatsAppData.bairro && whatsAppData.cidade) {
       // Message for property pages
@@ -33,7 +32,7 @@ export default function WhatsAppFloating() {
       message = `. 📌 Olá! Visitei o site de vocês e preciso de ajuda\n.\n[${currentUrl}]`;
     }
     
-    return baseUrl + encodeURIComponent(message);
+    return formatWhatsAppLink(phone, message);
   };
 
   return (

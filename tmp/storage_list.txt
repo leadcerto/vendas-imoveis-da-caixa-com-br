@@ -1,0 +1,15 @@
+Nome                                                         | Tamanho (KB)   
+--------------------------------------------------------------------------------
+1774486877129_Lista_imoveis_ES.csv                           | 4.67           
+1774487049415_Lista_imoveis_MG.csv                           | 5.75           
+1774487063596_Lista_imoveis_ES.csv                           | 4.67           
+1774487070661_Lista_imoveis_RS.csv                           | 5.46           
+1774487075428_Lista_imoveis_SP.csv                           | 5.43           
+1774490000378_Lista_imoveis_ES.csv                           | 4.67           
+1774490092139_Lista_imoveis_MG.csv                           | 5.75           
+1774490153535_Lista_imoveis_RS.csv                           | 5.46           
+1774490274493_Lista_imoveis_SP.csv                           | 5.43           
+1774490453183_Lista_imoveis_RJ-03-20.csv                     | 3975.25        
+1774491028940_Lista_imoveis_RJ-03-24.csv                     | 3790.04        
+20260318_200329_2026-03-12 - Lista_imoveis_RJ.csv            | 3990.45        
+20260318_200514_2026-03-12 - Lista_imoveis_RJ.csv            | 3990.45        

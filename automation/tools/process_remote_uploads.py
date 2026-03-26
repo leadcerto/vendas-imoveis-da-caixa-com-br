@@ -49,23 +49,26 @@ def process_pending_uploads():
             print(f"[INFO] Arquivo baixado para: {local_path}")
             
             # 3. Executa a ingestão
-            filename, aceitos = ingest_csv(local_path)
+            filename, stats = ingest_csv(local_path)
             
             # 4. Atualiza o log com os resultados reais
             # (O ingest_csv original não retorna o total de lidos/rejeitados separadamente, 
             # mas podemos inferir ou adaptar se necessário. Por agora, marcamos como concluído)
             
             supabase.table("logs_ingestao").update({
-                "total_aceitos": aceitos,
-                "total_rejeitados": 0, # Simplificado
+                "total_aceitos": stats.get('aceitos', 0),
+                "total_lidos": stats.get('total_lidos', 0),
+                "total_rejeitados": stats.get('rejeitados', 0),
                 "motivos_rejeicao": {
-                    **motivos,
+                    "info": "Upload via interface premium",
                     "status": "Concluído",
-                    "processed_at": datetime.now().isoformat()
+                    "detalhe": stats.get('detalhe', {}),
+                    "processed_at": datetime.now().isoformat(),
+                    "storage_path": log['motivos_rejeicao'].get('storage_path')
                 }
             }).eq("id", log["id"]).execute()
             
-            print(f"[SUCESSO] Log {log['id']} atualizado. {aceitos} imóveis processados.")
+            print(f"[SUCESSO] Log {log['id']} atualizado. {stats.get('aceitos', 0)} imóveis processados.")
             
         except Exception as e:
             print(f"[ERRO] Falha ao processar log {log['id']}: {e}")

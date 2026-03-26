@@ -122,7 +122,17 @@ class LocationResolver:
         for r in all_cities:
             self.cidades[(r['id_uf'], normalize_text(r['nome']))] = r['id']
             
-        print(f"[INFO] Localizacao carregada: {len(self.estados)} UFs, {len(self.cidades)} Cidades.")
+        all_bairros = []
+        page = 0
+        while True:
+            res = self.sb.table("bairros").select("id, id_cidade, nome").range(page*1000, (page+1)*1000 - 1).execute()
+            if not res.data: break
+            all_bairros.extend(res.data)
+            page += 1
+        for r in all_bairros:
+            self.bairros[(r['id_cidade'], normalize_text(r['nome']))] = r['id']
+
+        print(f"[INFO] Localizacao carregada: {len(self.estados)} UFs, {len(self.cidades)} Cidades, {len(self.bairros)} Bairros.")
 
     def resolve(self, uf_sigla, cidade_nome, bairro_nome, default_uf=None):
         sigla_to_use = uf_sigla if uf_sigla else default_uf

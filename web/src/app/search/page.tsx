@@ -7,11 +7,13 @@ import PropertyCard from '@/components/PropertyCard';
 import { IoFilterOutline, IoSearchOutline, IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5';
 import Link from 'next/link';
 import WhatsAppFloating from '@/components/WhatsAppFloating';
+import { useWhatsApp } from '@/context/WhatsAppContext';
 
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { setWhatsAppData } = useWhatsApp();
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const pageSize = 9;
@@ -90,6 +92,25 @@ function SearchResultsContent() {
   useEffect(() => {
     fetchProperties();
   }, [page, filters]);
+
+  // Sincroniza a imobiliária do WhatsApp baseada na UF do filtro
+  useEffect(() => {
+    const fetchImobiliariaByUF = async () => {
+      if (!filters.uf) return;
+
+      const { data, error } = await supabase
+        .from('imobiliarias')
+        .select('*')
+        .eq('imobiliaria_uf_atendimento', filters.uf)
+        .single();
+
+      if (data && !error) {
+        setWhatsAppData({ imobiliaria: data });
+      }
+    };
+
+    fetchImobiliariaByUF();
+  }, [filters.uf]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;

@@ -4,6 +4,7 @@ import sys
 import pandas as pd
 import glob
 import unicodedata
+import shutil
 from datetime import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -56,17 +57,34 @@ def format_currency(value):
     except:
         return "0,00"
 
-def generate_seo_fields(numero, modalidade, uf, cidade, bairro, desconto_pct):
-    b_seo = bairro if bairro else "bairro"
-    c_seo = cidade if cidade else "cidade"
-    u_seo = uf if uf else "uf"
+def generate_seo_fields(numero, modalidade, uf, cidade, bairro, desconto_moeda, tipo):
+    # Regras solicitadas pelo usuário
+    # imovel_caixa_post_titulo: 🔴 [tipo] [bairro] [cidade] [uf] [numero] Imóvel CAIXA 🧡💙
+    titulo = f"🔴 {tipo} {bairro} {cidade} {uf} {numero} Imóvel CAIXA 🧡💙"
     
-    slug_base = f"imovel-{b_seo}-{c_seo}-{u_seo}-{numero}"
-    slug = slugify(slug_base)
+    # imovel_caixa_post_descricao: Imóvel CAIXA [tipo] [bairro] [cidade] [uf] com desconto de [valor]. ⚠️ Estamos Online!
+    def format_currency_br(val):
+        return f"R$ {float(val):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     
-    titulo = f"Imóvel em {b_seo}, {c_seo} - {u_seo} ({numero})"
-    descricao = f"Oportunidade Caixa: Imóvel em {b_seo}, {c_seo} - {u_seo}. Modalidade {modalidade} com {desconto_pct:.1f}% de desconto. Veja Detalhes!"
-    keyword = f"leilão caixa {c_seo}, venda online caixa {b_seo}, imóvel caixa {numero}"
+    desconto_fmt = format_currency_br(desconto_moeda)
+    descricao = f"Imóvel CAIXA {tipo} {bairro} {cidade} {uf} com desconto de {desconto_fmt}. ⚠️ Estamos Online!"
+    
+    # imovel_caixa_post_palavra_chave: [tipo] [bairro] [cidade] [uf]
+    keyword = f"{tipo} {bairro} {cidade} {uf}"
+    
+    # imovel_caixa_post_link_permanente: [tipo]-[bairro]-[cidade]-[uf]-[numero]
+    def normalize_seo_part(text):
+        if not text: return ""
+        n = "".join(c for c in unicodedata.normalize('NFD', str(text).strip().lower())
+                    if unicodedata.category(c) != 'Mn')
+        return n.replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")
+
+    t_s = normalize_seo_part(tipo)
+    b_s = normalize_seo_part(bairro)
+    c_s = normalize_seo_part(cidade)
+    u_s = normalize_seo_part(uf)
+    
+    slug = f"{t_s}-{b_s}-{c_s}-{u_s}-{numero}"
     
     return titulo, slug, descricao, keyword
 
@@ -268,8 +286,29 @@ def ingest_csv(file_path):
         bairro_raw = str(row.get(c_bairro, '')).strip() if c_bairro else ''
         
         id_uf, id_cidade, id_bairro, requer_revisao, uf_final = RESOLVER.resolve(uf_raw, cidade_raw, bairro_raw, default_uf)
-        titulo, link, desc_seo, keyword = generate_seo_fields(int(numero), mod_raw, uf_final, cidade_raw, bairro_raw, float(desconto))
         
+        tipo_raw = str(row.get(get_col(df, ['Tipo de imóvel', 'Tipo']), 'Imóvel')).strip()
+        val_moeda = max(0.0, avaliacao - preco)
+        
+        titulo, link, desc_seo, keyword = generate_seo_fields(int(numero), mod_raw, uf_final, cidade_raw, bairro_raw, val_moeda, tipo_raw)
+        
+        # Caminho da imagem de destaque
+        img_name = f"{link}.jpg"
+        img_path_rel = f"/imagens-destaque/{img_name}"
+        
+        # Lógica de clonagem de imagem
+        BASE_DIR_INGEST = Path(__file__).parent.parent.parent
+        TEMPLATE_IMG_INGEST = BASE_DIR_INGEST / "imagens" / "imagem-destaque" / "ImagemDestaque.jpg"
+        DEST_DIR_INGEST = BASE_DIR_INGEST / "web" / "public" / "imagens-destaque"
+        
+        if TEMPLATE_IMG_INGEST.exists():
+            dest_file = DEST_DIR_INGEST / img_name
+            if not dest_file.exists():
+                try:
+                    shutil.copy2(TEMPLATE_IMG_INGEST, dest_file)
+                except:
+                    pass
+
         batch_imoveis.append({
             "imovel_caixa_numero": int(numero),
             "id_cidade_imovel_caixa": int(id_cidade) if id_cidade else None,
@@ -281,6 +320,7 @@ def ingest_csv(file_path):
             "imovel_caixa_post_link_permanente": link,
             "imovel_caixa_post_descricao": desc_seo,
             "imovel_caixa_post_palavra_chave": keyword,
+            "imovel_caixa_post_imagem_destaque": img_path_rel,
             "requer_revisao_localizacao": bool(requer_revisao),
             "updated_at": datetime.now().isoformat()
         })

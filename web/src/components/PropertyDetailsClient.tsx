@@ -157,27 +157,15 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque</p>
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">
-                  {getLocalImagePath({
-                    tipo_imovel: property.property_type,
-                    bairro: property.neighborhood,
-                    cidade: property.city,
-                    uf: property.state,
-                    numero_imovel: property.property_number
-                  })}
+                  {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                 </p>
-                <div className="relative w-full h-[120px] rounded-lg overflow-hidden border border-gray-200">
+                <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white">
                    <img 
-                     src={getLocalImagePath({
-                       tipo_imovel: property.property_type,
-                       bairro: property.neighborhood,
-                       cidade: property.city,
-                       uf: property.state,
-                       numero_imovel: property.property_number
-                     })}
+                     src={property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                      alt="Preview Destaque"
                      className="w-full h-full object-cover"
                      onError={(e) => {
-                       (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/f37021/white?text=Imagem+Nao+Encontrada';
+                       (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/f37021/white?text=Imagem+Padrao';
                      }}
                    />
                 </div>
@@ -193,7 +181,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
              <span className="text-[10px] font-black text-[#005CA9] uppercase tracking-[0.4em]">Oportunidade Exclusiva</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 font-montserrat tracking-tight leading-tight uppercase">
-             {`${(property.property_type || 'Imóvel')} ${(property.neighborhood || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}, ${(property.city || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()).replace('Sao Goncalo', 'São Gonçalo')} - ${property.state} ${property.property_number}`}
+             {property.imovel_caixa_post_titulo || `${(property.property_type || 'Imóvel')} ${(property.neighborhood || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase())}, ${(property.city || '').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()).replace('Sao Goncalo', 'São Gonçalo')} - ${property.state} ${property.property_number}`}
           </h1>
         </section>
 

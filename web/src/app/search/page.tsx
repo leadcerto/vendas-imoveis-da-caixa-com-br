@@ -53,7 +53,9 @@ function SearchResultsContent() {
       .select('*', { count: 'exact' });
 
     if (filters.q) {
-      query = query.or(`bairro_nome.ilike.%${filters.q}%,cidade_nome.ilike.%${filters.q}%,endereco.ilike.%${filters.q}%`);
+      const q = filters.q.trim();
+      // Melhora a busca permitindo encontrar parte do tipo, bairro, cidade ou endereço
+      query = query.or(`bairro_nome.ilike.%${q}%,cidade_nome.ilike.%${q}%,endereco.ilike.%${q}%,tipo_nome.ilike.%${q}%`);
     }
     if (filters.uf) query = query.eq('uf_sigla', filters.uf);
     if (filters.cidade) query = query.eq('cidade_nome', filters.cidade);
@@ -68,9 +70,9 @@ function SearchResultsContent() {
     if (filters.minPrice) query = query.gte('preco', filters.minPrice);
     if (filters.maxPrice) query = query.lte('preco', filters.maxPrice);
     
-    // Financing filter
+    // Financing filter - agora usa a coluna correta da view
     if (filters.onlyFinancing) {
-      query = query.eq('modalidade', 'Financiamento'); // Ajustar conforme o valor real no banco se necessário
+      query = query.eq('aceita_financiamento', true);
     }
 
     const from = (page - 1) * pageSize;

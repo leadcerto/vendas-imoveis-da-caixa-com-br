@@ -102,7 +102,8 @@ function SearchResultsContent() {
         .from('imobiliarias')
         .select('*')
         .eq('imobiliaria_uf_atendimento', filters.uf)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (data && !error) {
         setWhatsAppData({ imobiliaria: data });

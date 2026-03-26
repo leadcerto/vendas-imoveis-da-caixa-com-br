@@ -15,6 +15,8 @@ export default function BuscaImoveis() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Advanced Filter State
+  const [ufs, setUfs] = useState<{sigla: string, nome: string}[]>([]);
+  const [selectedUf, setSelectedUf] = useState('RJ');
   const [cities, setCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState('');
   const [bairros, setBairros] = useState<string[]>([]);
@@ -23,6 +25,7 @@ export default function BuscaImoveis() {
   const [maxPrice, setMaxPrice] = useState('');
   const [onlyFinancing, setOnlyFinancing] = useState(false);
   const [loadingBairros, setLoadingBairros] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -33,28 +36,56 @@ export default function BuscaImoveis() {
       
       if (count) setPropertiesCount(count);
 
-      // Fetch Cities in RJ using RPC for efficiency and to bypass limits
-      const { data: citiesData, error: citiesError } = await supabase
-        .rpc('get_unique_cities', { uf_sigla_param: 'RJ' });
+      // Fetch Available UFs (states that have properties)
+      const { data: ufsData } = await supabase
+        .from('imoveis')
+        .select('estados!inner(sigla, nome)')
+        .returns<{estados: {sigla: string, nome: string}}[]>();
       
-      if (citiesData) {
-        setCities(citiesData.map((c: any) => c.cidade));
+      if (ufsData) {
+        // Deduplicate UFs locally for simplicity
+        const uniqueUfs = Array.from(new Set(ufsData.map((u: any) => u.estados.sigla)))
+          .map(sigla => {
+            const match = ufsData.find((u: any) => u.estados.sigla === sigla);
+            return match ? match.estados : null;
+          })
+          .filter(Boolean) as {sigla: string, nome: string}[];
+        
+        setUfs(uniqueUfs.sort((a, b) => a.nome.localeCompare(b.nome)));
       }
     };
     fetchInitialData();
   }, []);
 
+  // Fetch Cities when UF changes
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!selectedUf) return;
+      
+      setLoadingCities(true);
+      const { data: citiesData, error: citiesError } = await supabase
+        .rpc('get_unique_cities', { uf_sigla_param: selectedUf });
+      
+      if (citiesData) {
+        setCities(citiesData.map((c: any) => c.cidade));
+      }
+      setLoadingCities(false);
+      setSelectedCity(''); // Reset city when UF changes
+    };
+    fetchCities();
+  }, [selectedUf]);
+
   // Fetch Bairros when city changes
   useEffect(() => {
     const fetchBairros = async () => {
-      if (!selectedCity) {
+      if (!selectedCity || !selectedUf) {
         setBairros([]);
         return;
       }
       setLoadingBairros(true);
       const { data, error } = await supabase
         .rpc('get_unique_bairros', { 
-          uf_sigla_param: 'RJ', 
+          uf_sigla_param: selectedUf, 
           city_name_param: selectedCity 
         });
       
@@ -65,7 +96,7 @@ export default function BuscaImoveis() {
     };
     fetchBairros();
     setSelectedBairros([]); // Reset neighborhoods when city changes
-  }, [selectedCity]);
+  }, [selectedCity, selectedUf]);
 
   const toggleBairro = (bairro: string) => {
     setSelectedBairros(prev => 
@@ -81,7 +112,7 @@ export default function BuscaImoveis() {
     if (minPrice) params.set('minPrice', minPrice);
     if (maxPrice) params.set('maxPrice', maxPrice);
     if (onlyFinancing) params.set('onlyFinancing', 'true');
-    params.set('uf', 'RJ');
+    params.set('uf', selectedUf);
     
     router.push(`/search?${params.toString()}`);
   };
@@ -112,15 +143,33 @@ onSubmit={handleSearch} className="bg-white border border-gray-100 rounded-[25px
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2">Estado (UF)</label>
+                <div className="relative">
+                  <IoLocationOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[#F9B200]" size={20} />
+                  <select 
+                    value={selectedUf}
+                    onChange={(e) => setSelectedUf(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-gray-800 font-bold focus:ring-2 focus:ring-[#F9B200]/20 outline-none appearance-none cursor-pointer transition-all hover:bg-white"
+                  >
+                    <option value="">Selecione o Estado</option>
+                    {ufs.map(uf => (
+                      <option key={uf.sigla} value={uf.sigla}>{uf.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest pl-2">Cidade / Município</label>
                 <div className="relative">
                   <IoLocationOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005CA9]" size={20} />
                   <select 
                     value={selectedCity}
                     onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-gray-800 font-bold focus:ring-2 focus:ring-[#005CA9]/20 outline-none appearance-none cursor-pointer"
+                    disabled={!selectedUf || loadingCities}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-gray-800 font-bold focus:ring-2 focus:ring-[#005CA9]/20 outline-none appearance-none cursor-pointer disabled:opacity-50 transition-all hover:bg-white"
                   >
-                    <option value="">Selecione a cidade</option>
+                    <option value="">{loadingCities ? 'Carregando cidades...' : 'Selecione a cidade'}</option>
                     {cities.map(city => (
                       <option key={city} value={city}>{city}</option>
                     ))}

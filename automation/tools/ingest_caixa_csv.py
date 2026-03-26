@@ -10,8 +10,9 @@ from supabase import create_client, Client
 from pathlib import Path
 
 # Configuração de encoding para evitar erros de leitura
-sys.stdin.reconfigure(encoding='utf-8')
-sys.stdout.reconfigure(encoding='utf-8')
+if sys.version_info >= (3, 7):
+    sys.stdin.reconfigure(encoding='utf-8')
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -31,156 +32,21 @@ except:
         def normalize(self, text): return str(text).upper().strip()
     NORMALIZER = SimpleNormalizer()
 
+# Cliente Supabase global
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Configurações de Filtro (Conforme solicitado pelo usuário)
-DESCONTO_MINIMO = 30.0
-MODALIDADES_ACEITAS = ["Venda Online", "Venda Direta Online"]
-
-import unicodedata
+# Configurações de Filtro
+DESCONTO_MINIMO = 0.0
+MODALIDADES_ACEITAS = ["Venda Online", "Venda Direta Online", "Leilão SFI", "Licitação Aberta", "Licitação Fechada", "Venda Direta", "Leilão"]
 
 def normalize_text(text):
     if not text: return ""
-    # Normaliza para NFD (separa acentos), converte para upper e remove caracteres de acentuação (Mn)
     return "".join(c for c in unicodedata.normalize('NFD', str(text).strip().upper())
                   if unicodedata.category(c) != 'Mn')
 
-class LocationResolver:
-    def __init__(self, supabase_client):
-        self.sb = supabase_client
-        self.estados = {}  # sigla -> id
-        self.cidades = {}  # (uf_id, nome_norm) -> id
-        self.bairros = {}  # (cidade_id, nome_norm) -> id
-        self._load_master_data()
-
-    def _load_master_data(self):
-        print("[INFO] Carregando dados mestres de localizacao...")
-        
-        # Estados
-        res = self.sb.table("estados").select("id, sigla").execute()
-        self.estados = {normalize_text(r['sigla']): r['id'] for r in res.data}
-        
-        # Cidades (Paginado)
-        all_cities = []
-        page = 0
-        while True:
-            res = self.sb.table("cidades").select("id, id_uf, nome").range(page*1000, (page+1)*1000 - 1).execute()
-            if not res.data: break
-            all_cities.extend(res.data)
-            page += 1
-            
-        for r in all_cities:
-            key = (r['id_uf'], normalize_text(r['nome']))
-            self.cidades[key] = r['id']
-            
-        # Bairros (Paginado)
-        all_bairros = []
-        page = 0
-        while True:
-            res = self.sb.table("bairros").select("id, id_cidade, nome").range(page*1000, (page+1)*1000 - 1).execute()
-            if not res.data: break
-            all_bairros.extend(res.data)
-            page += 1
-
-        for r in all_bairros:
-            key = (r['id_cidade'], normalize_text(r['nome']))
-            self.bairros[key] = r['id']
-            
-        print(f"[INFO] Localizacao carregada: {len(self.estados)} UFs, {len(self.cidades)} Cidades, {len(self.bairros)} Bairros.")
-
-    def resolve(self, uf_sigla, cidade_nome, bairro_nome):
-        uf_id = self.estados.get(normalize_text(uf_sigla))
-        cidade_id = None
-        bairro_id = None
-        requer_revisao = False
-
-        if uf_id:
-            cidade_norm = normalize_text(cidade_nome)
-            cidade_id = self.cidades.get((uf_id, cidade_norm))
-            if cidade_id:
-                # Primeiro, usa o normalizador inteligente (regras, mapeamentos, etc)
-                bairro_processado = NORMALIZER.normalize(bairro_nome)
-                bairro_norm = normalize_text(bairro_processado)
-                
-                bairro_id = self.bairros.get((cidade_id, bairro_norm))
-                if not bairro_id:
-                    requer_revisao = True
-            else:
-                requer_revisao = True
-        else:
-            requer_revisao = True
-            
-        return uf_id, cidade_id, bairro_id, requer_revisao
-
-RESOLVER = None
-
-def parse_valor(valor):
-    if pd.isna(valor): return 0.0
-    s_valor = str(valor).replace("R$", "").replace(".", "").replace(",", ".").strip()
-    try:
-        return float(s_valor)
-    except:
-        return 0.0
-
-def parse_desconto(valor):
-    if pd.isna(valor): return 0.0
-    s_valor = str(valor).replace("%", "").replace(",", ".").strip()
-    try:
-        return float(s_valor)
-    except:
-        return 0.0
-
-def extract_features_from_desc(description):
-    if not description:
-        return {}
-    
-    desc = description.lower()
-    
-    def get_num(pattern, text):
-        match = re.search(pattern, text)
-        if match:
-            try:
-                val = match.group(1).replace(',', '.')
-                return float(val)
-            except:
-                return 0.0
-        return 0.0
-
-    def get_int(pattern, text):
-        match = re.search(pattern, text)
-        if match:
-            try:
-                return int(match.group(1))
-            except:
-                return 1
-        return 0
-
-    features = {
-        "imovel_caixa_descricao_area_total": get_num(r'([\d\.,]+)\s*de área total', desc),
-        "imovel_caixa_descricao_area_privativa": get_num(r'([\d\.,]+)\s*de área privativa', desc),
-        "imovel_caixa_descricao_area_do_terreno": get_num(r'([\d\.,]+)\s*de área do terreno', desc),
-        "imovel_caixa_descricao_quartos": get_int(r'(\d+)\s*qto', desc),
-        "imovel_caixa_descricao_garagem": get_int(r'(\d+)\s*(?:vaga|garagem)', desc),
-        "imovel_caixa_descricao_wc_banheiro": get_int(r'(\d+)\s*wc', desc) or (1 if 'wc' in desc else 0),
-        "imovel_caixa_descricao_area_servico": 'a.serv' in desc or 'área de serviço' in desc,
-        "imovel_caixa_descricao_churrasqueira": 'churrasqueira' in desc,
-        "imovel_caixa_descricao_cozinha": 'cozinha' in desc,
-        "imovel_caixa_descricao_piscina": 'piscina' in desc,
-        "imovel_caixa_descricao_sala": 'sala' in desc,
-        "imovel_caixa_descricao_terraco": 'terraço' in desc or 'terraco' in desc,
-        "imovel_caixa_descricao_varanda": 'varanda' in desc,
-        # Campos de pagamento/anotações extraídos da descrição
-        "imovel_caixa_pagamento_condominio": get_num(r'débitos de condomínio no valor de r\$\s*([\d\.,]+)', desc),
-        "imovel_caixa_pagamento_anotacoes": re.search(r'anotações:\s*(.*)', desc, re.I).group(1).strip() if re.search(r'anotações:', desc, re.I) else ""
-    }
-    
-    return features
-
 def slugify(text):
     if not text: return ""
-    # Normalize unicode characters to remove accents
     text = unicodedata.normalize('NFKD', str(text)).encode('ascii', 'ignore').decode('ascii')
-    # Convert to lowercase and replace non-alphanumeric with hyphens
     text = re.sub(r'[^\w\s-]', '', text).lower().strip()
     return re.sub(r'[-\s]+', '-', text)
 
@@ -190,63 +56,146 @@ def format_currency(value):
     except:
         return "0,00"
 
-TIPOS_MAP = None
+def generate_seo_fields(numero, modalidade, uf, cidade, bairro, desconto_pct):
+    b_seo = bairro if bairro else "bairro"
+    c_seo = cidade if cidade else "cidade"
+    u_seo = uf if uf else "uf"
+    
+    slug_base = f"imovel-{b_seo}-{c_seo}-{u_seo}-{numero}"
+    slug = slugify(slug_base)
+    
+    titulo = f"Imóvel em {b_seo}, {c_seo} - {u_seo} ({numero})"
+    descricao = f"Oportunidade Caixa: Imóvel em {b_seo}, {c_seo} - {u_seo}. Modalidade {modalidade} com {desconto_pct:.1f}% de desconto. Veja Detalhes!"
+    keyword = f"leilão caixa {c_seo}, venda online caixa {b_seo}, imóvel caixa {numero}"
+    
+    return titulo, slug, descricao, keyword
+
+def extract_features_from_desc(description):
+    if not description: return {}
+    desc = description.lower()
+    
+    def get_num(pattern, text):
+        match = re.search(pattern, text)
+        if match:
+            try:
+                return float(match.group(1).replace(',', '.'))
+            except: return 0.0
+        return 0.0
+
+    def get_int(pattern, text):
+        match = re.search(pattern, text)
+        if match:
+            try: return int(match.group(1))
+            except: return 0
+        return 0
+
+    return {
+        "imovel_caixa_descricao_area_total": get_num(r'([\d\.,]+)\s*de área total', desc),
+        "imovel_caixa_descricao_area_privativa": get_num(r'([\d\.,]+)\s*de área privativa', desc),
+        "imovel_caixa_descricao_area_do_terreno": get_num(r'([\d\.,]+)\s*de área do terreno', desc),
+        "imovel_caixa_descricao_quartos": get_int(r'(\d+)\s*qto', desc),
+        "imovel_caixa_descricao_garagem": get_int(r'(\d+)\s*(?:vaga|garagem)', desc),
+        "imovel_caixa_descricao_wc_banheiro": get_int(r'(\d+)\s*wc', desc) or (1 if 'wc' in desc else 0),
+        "imovel_caixa_pagamento_condominio": get_num(r'débitos de condomínio no valor de r\$\s*([\d\.,]+)', desc),
+    }
+
+class LocationResolver:
+    def __init__(self, supabase_client):
+        self.sb = supabase_client
+        self.estados = {}
+        self.cidades = {}
+        self.bairros = {}
+        self._load_master_data()
+
+    def _load_master_data(self):
+        print("[INFO] Carregando dados mestres de localizacao...")
+        res_uf = self.sb.table("estados").select("id, sigla").execute()
+        self.estados = {normalize_text(r['sigla']): r['id'] for r in res_uf.data}
+        
+        all_cities = []
+        page = 0
+        while True:
+            res = self.sb.table("cidades").select("id, id_uf, nome").range(page*1000, (page+1)*1000 - 1).execute()
+            if not res.data: break
+            all_cities.extend(res.data)
+            page += 1
+        for r in all_cities:
+            self.cidades[(r['id_uf'], normalize_text(r['nome']))] = r['id']
+            
+        print(f"[INFO] Localizacao carregada: {len(self.estados)} UFs, {len(self.cidades)} Cidades.")
+
+    def resolve(self, uf_sigla, cidade_nome, bairro_nome, default_uf=None):
+        sigla_to_use = uf_sigla if uf_sigla else default_uf
+        uf_id = self.estados.get(normalize_text(sigla_to_use))
+        cidade_id = None
+        bairro_id = None
+        requer_revisao = False
+
+        if uf_id:
+            cidade_id = self.cidades.get((uf_id, normalize_text(cidade_nome)))
+            if cidade_id:
+                bnorm = normalize_text(NORMALIZER.normalize(bairro_nome))
+                key_b = (cidade_id, bnorm)
+                if key_b in self.bairros:
+                    bairro_id = self.bairros[key_b]
+                else:
+                    requer_revisao = True
+            else: requer_revisao = True
+        else: requer_revisao = True
+            
+        return uf_id, cidade_id, bairro_id, requer_revisao, sigla_to_use
+
+RESOLVER = None
 
 def ingest_csv(file_path):
-    global RESOLVER, TIPOS_MAP
+    global RESOLVER
     if RESOLVER is None:
         RESOLVER = LocationResolver(supabase)
-    
-    if TIPOS_MAP is None:
-        res_tipos = supabase.table("tipos_imovel").select("id, nome").execute()
-        TIPOS_MAP = {row['id']: row['nome'] for row in res_tipos.data}
 
     nome_arquivo = os.path.basename(file_path)
-    
-    # Extrai data do nome do arquivo (formato: DD-MM-YYYY-Nome.csv)
     try:
         partes = nome_arquivo.split("-")
         data_geracao = datetime(int(partes[2]), int(partes[1]), int(partes[0])).date()
-    except Exception:
+    except:
         data_geracao = datetime.today().date()
-        print(f"[AVISO] Nao foi possivel extrair data do arquivo. Usando hoje: {data_geracao}")
 
     print(f"\n--- Processando: {nome_arquivo} ---")
     
+    # Inferir UF do nome do arquivo (fallback)
+    default_uf = None
+    if "_RJ" in nome_arquivo.upper(): default_uf = "RJ"
+    elif "_SP" in nome_arquivo.upper(): default_uf = "SP"
+    elif "_MG" in nome_arquivo.upper(): default_uf = "MG"
+    elif "_RS" in nome_arquivo.upper(): default_uf = "RS"
+    elif "_ES" in nome_arquivo.upper(): default_uf = "ES"
+    elif "LISTA_IMOVEIS_RJ" in nome_arquivo.upper(): default_uf = "RJ"
+    
+    print(f"  [INFO] UF Padrao inferida: {default_uf}")
     try:
-        # Detecta onde começam os dados reais
         header_idx = 0
         with open(file_path, 'r', encoding='latin1') as f:
             for i, line in enumerate(f):
-                if i > 100: break
-                clean_line = line.lower().strip()
-                # Se encontrar a linha de cabeçalho padrão
-                if "uf;cidade;bairro" in clean_line:
+                if i > 150: break
+                clean_line = line.strip().lower()
+                if len([k for k in ["imóvel", "cidade", "bairro", "desconto"] if k in clean_line]) >= 3:
                     header_idx = i
-                    print(f"[INFO] Cabecalho localizado na linha {i}")
+                    print(f"  [HEADER] Linha {i}")
                     break
-                # Ou se encontrar uma linha que parece dados (Começa com número longo e tem muitos ;)
-                parts = clean_line.split(';')
-                if len(parts) > 5 and parts[0].strip().isdigit() and len(parts[0].strip()) >= 10:
-                    header_idx = i - 1 if i > 0 else 0
-                    print(f"[INFO] Dados detectados a partir da linha {i}. Usando header_idx {header_idx}")
-                    break
-        
-        # Lê o CSV pulando o ruído inicial
-        df = pd.read_csv(file_path, sep=';', encoding='latin1', skiprows=header_idx, on_bad_lines='skip')
+        df = pd.read_csv(file_path, sep=';', encoding='latin1', skiprows=header_idx, on_bad_lines='skip', dtype=str)
         df.columns = [str(c).strip() for c in df.columns]
     except Exception as e:
-        print(f"[ERRO] Falha ao ler arquivo: {e}")
-        return nome_arquivo, 0
+        print(f"[ERRO] Leitura: {e}")
+        return nome_arquivo, {"total_lidos": 0, "aceitos": 0}
 
-    total_lidos = len(df)
-    print(f"Total de linhas lidas: {total_lidos}")
+    total_lidos = 0
+    aceitos = 0
+    rejeitados = 0
+    motivos = {"desconto_baixo": 0, "modalidade_invalida": 0, "numero_invalido": 0}
 
-    # Mapeamento flexivel
-    def get_col(df, fragments):
-        for col in df.columns:
-            if any(f.lower() in col.lower() for f in fragments):
-                return col
+    # Mapeamento de colunas
+    def get_col(df, frags):
+        for c in df.columns:
+            if any(f.lower() in c.lower() for f in frags): return c
         return None
 
     c_numero = get_col(df, ['N° do imóvel', 'Nº do imóvel', 'numero'])
@@ -257,194 +206,135 @@ def ingest_csv(file_path):
     c_preco = get_col(df, ['Preço', 'venda'])
     c_avaliacao = get_col(df, ['avaliação', 'Preço de avaliação'])
     c_desconto = get_col(df, ['Desconto'])
+    c_modalidade = get_col(df, ['Modalidade'])
     c_fgts = get_col(df, ['FGTS'])
     c_financiamento = get_col(df, ['Financiamento'])
-    c_descricao = get_col(df, ['Descrição', 'descricao'])
-    c_modalidade = get_col(df, ['Modalidade'])
-
-    aceitos = 0
-    rejeitados = 0
-    motivos = {"desconto_baixo": 0, "modalidade_invalida": 0, "numero_invalido": 0, "erro_db": 0}
 
     batch_imoveis = []
     batch_historico = []
+    rejeitados_mod = 0
+    rejeitados_desc = 0
+    rejeitados_db = 0
 
-    for _, row in df.iterrows():
-        # 1. Validação de Número
-        num_raw = row.get(c_numero) if c_numero else None
-        if pd.isna(num_raw):
-            rejeitados += 1
-            motivos["numero_invalido"] += 1
-            continue
+    for i, row in df.iterrows():
+        total_lidos += 1
+        num_raw = row.get(c_numero)
+        if pd.isna(num_raw): continue
             
         try:
-            numero_str = str(num_raw).strip().split('.')[0]
-            if not numero_str.isdigit():
-                raise ValueError
-            numero = int(numero_str)
+            s_num = str(num_raw).strip()
+            # Se for notação científica (contém E+), tenta extrair o número correto do link
+            if "E+" in s_num.upper() or "," in s_num:
+                link_raw = str(row.get(c_link if 'c_link' in locals() else get_col(df, ['link']), ''))
+                match_num = re.search(r'nimovel=(\d+)', link_raw)
+                if match_num:
+                    numero = int(match_num.group(1))
+                else:
+                    # Tenta converter o s_num tratando a vírgula como decimal se necessário
+                    s_num_fixed = s_num.replace(',', '.')
+                    numero = int(float(s_num_fixed))
+            else:
+                numero = int(float(s_num))
+        except: continue
+            
+        try:
+            preco = float(str(row.get(c_preco, '0')).replace('.', '').replace(',', '.').replace('R$', '').strip())
+            avaliacao = float(str(row.get(c_avaliacao, '0')).replace('.', '').replace(',', '.').replace('R$', '').strip())
+            desconto = float(str(row.get(c_desconto, '0')).replace('%', '').replace(',', '.').strip())
         except:
-            rejeitados += 1
-            motivos["numero_invalido"] += 1
+            preco, avaliacao, desconto = 0.0, 0.0, 0.0
+            
+        mod_raw = str(row.get(c_modalidade, '')).strip()
+        if mod_raw not in MODALIDADES_ACEITAS:
+            rejeitados_mod += 1
+            continue
+            
+        if float(desconto) < DESCONTO_MINIMO:
+            rejeitados_desc += 1
             continue
 
-        # 2. FILTRO DE MODALIDADE
-        modalidade = str(row.get(c_modalidade, '')).strip() if c_modalidade else ''
-        if modalidade not in MODALIDADES_ACEITAS:
-            rejeitados += 1
-            motivos["modalidade_invalida"] += 1
-            continue
-
-        # 3. FILTRO DE DESCONTO (>30%)
-        desconto_pct = parse_desconto(row.get(c_desconto, 0)) if c_desconto else 0.0
-        if desconto_pct < DESCONTO_MINIMO:
-            rejeitados += 1
-            motivos["desconto_baixo"] += 1
-            continue
-
-        # Processamento de Valores
-        valor_venda = parse_valor(row.get(c_preco, 0)) if c_preco else 0.0
-        valor_avaliacao = parse_valor(row.get(c_avaliacao, 0)) if c_avaliacao else 0.0
-        financiamento = str(row.get(c_financiamento, '')).strip().lower() == 'sim' if c_financiamento else False
-        pagamento_fgts = str(row.get(c_fgts, '')).strip().lower() == 'sim' if c_fgts else False
-        desconto_moeda = max(0.0, float(valor_avaliacao - valor_venda))
+        uf_raw = str(row.get(c_uf, '')).strip() if c_uf else ''
+        cidade_raw = str(row.get(c_cidade, '')).strip() if c_cidade else ''
+        bairro_raw = str(row.get(c_bairro, '')).strip() if c_bairro else ''
         
-        # Resolvendo Localização Mestre
-        uf_raw = str(row.get(c_uf, '')).strip()
-        cidade_raw = str(row.get(c_cidade, '')).strip()
-        bairro_raw = str(row.get(c_bairro, '')).strip()
+        id_uf, id_cidade, id_bairro, requer_revisao, uf_final = RESOLVER.resolve(uf_raw, cidade_raw, bairro_raw, default_uf)
+        titulo, link, desc_seo, keyword = generate_seo_fields(int(numero), mod_raw, uf_final, cidade_raw, bairro_raw, float(desconto))
         
-        id_uf, id_cidade, id_bairro, requer_revisao = RESOLVER.resolve(uf_raw, cidade_raw, bairro_raw)
-
-        # Resolução de Tipo de Imóvel
-        desc_raw = str(row.get(c_descricao, '')).strip() if c_descricao else ''
-        id_tipo = 16  # Padrao: Outros
-        tipo_nome = "Imovel"
-        if desc_raw and TIPOS_MAP:
-            first_part = desc_raw.split(',')[0].strip().lower()
-            for tid, tname in TIPOS_MAP.items():
-                if tname.lower() in first_part:
-                    id_tipo = tid
-                    tipo_nome = tname
-                    break
-
-        # Extração de características da descrição
-        desc_features = extract_features_from_desc(desc_raw)
-
-        # Geração de Campos SEO
-        bairro_seo = bairro_raw if bairro_raw else "bairro"
-        cidade_seo = cidade_raw if cidade_raw else "cidade"
-        uf_seo = uf_raw if uf_raw else "uf"
-        
-        slug_base = f"{tipo_nome}-{bairro_seo}-{cidade_seo}-{uf_seo}-{numero}"
-        slug = slugify(slug_base)
-        desc_seo = f"{tipo_nome} {bairro_seo} {cidade_seo} {uf_seo} {numero}. Aproveite o desconto de R$ {format_currency(desconto_moeda)}. Clique Aqui para mais informações."
-        keyword = f"{tipo_nome} {bairro_seo} {cidade_seo} {uf_seo} {numero}"
-        titulo_seo = f"{tipo_nome} em {bairro_seo}, {cidade_seo} - {uf_seo} ({numero})"
-        
-        image_url_destaque = f"/imagens-destaque/{slug}.jpg"
-        
-        # Novo Selo de Oportunidade
-        if desconto_pct >= 80:
-            selo = "&#129351; Ouro"
-        elif desconto_pct >= 75:
-            selo = "&#129352; Prata"
-        elif desconto_pct >= 70:
-            selo = "&#129353; Bronze"
-        else:
-            selo = "&#128077; Aprovado"
-
-        # Registro Mestre
-        registro_master = {
-            "imovel_caixa_numero": numero,
-            "imovel_caixa_criacao": str(data_geracao),
-            "imovel_caixa_endereco_csv": str(row.get(c_endereco, '')).strip() if c_endereco else '',
-            "imovel_caixa_valor_venda": valor_venda,
-            "imovel_caixa_pagamento_financiamento": financiamento,
-            "imovel_caixa_modalidade": modalidade,
-            "imovel_caixa_link_imagem": f"https://venda-imoveis.caixa.gov.br/fotos/F{numero}.jpg",
-            "imovel_caixa_link_matricula": f"https://venda-imoveis.caixa.gov.br/editais/matricula/{uf_raw.upper()}/{numero}.pdf",
-            "imovel_caixa_link_acesso": f"https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnOrigem=index&hdnimovel={numero}",
-            "id_uf_imovel_caixa": id_uf,
-            "id_cidade_imovel_caixa": id_cidade,
-            "id_bairro_imovel_caixa": id_bairro,
-            "id_tipo_imovel_caixa": id_tipo,
-            "imovel_caixa_post_link_permanente": slug,
+        batch_imoveis.append({
+            "imovel_caixa_numero": int(numero),
+            "id_cidade_imovel_caixa": int(id_cidade) if id_cidade else None,
+            "id_bairro_imovel_caixa": int(id_bairro) if id_bairro else None,
+            "id_uf_imovel_caixa": int(id_uf) if id_uf else None,
+            "imovel_caixa_endereco_csv": str(row.get(c_endereco, '')).strip(),
+            "imovel_caixa_modalidade": mod_raw,
+            "imovel_caixa_post_titulo": titulo,
+            "imovel_caixa_post_link_permanente": link,
             "imovel_caixa_post_descricao": desc_seo,
             "imovel_caixa_post_palavra_chave": keyword,
-            "imovel_caixa_post_titulo": titulo_seo,
-            "imovel_caixa_post_selo_oportunidade": selo,
-            "imovel_caixa_post_imagem_destaque": image_url_destaque,
-            "requer_revisao_localizacao": requer_revisao,
-            "updated_at": datetime.now().isoformat(),
-            **desc_features
-        }
-        batch_imoveis.append(registro_master)
+            "requer_revisao_localizacao": bool(requer_revisao),
+            "updated_at": datetime.now().isoformat()
+        })
+        
+        batch_historico.append({
+            "numero": int(numero),
+            "imovel_caixa_modalidade": mod_raw,
+            "imovel_caixa_valor_venda": float(preco),
+            "imovel_caixa_valor_avaliacao": float(avaliacao),
+            "imovel_caixa_valor_desconto_percentual": float(desconto),
+            "imovel_caixa_valor_desconto_moeda": float(max(0.0, avaliacao - preco)),
+            "created_at": datetime.now().isoformat()
+        })
 
-        # Processamento em batches
         if len(batch_imoveis) >= 50:
-            enviar_batch(batch_imoveis, modalidade, data_geracao, row, c_numero)
-            aceitos += len(batch_imoveis)
-            batch_imoveis = []
+            try:
+                success_count = enviar_batch_com_historico(batch_imoveis, batch_historico)
+                aceitos += (success_count or 0)
+                rejeitados_db += (len(batch_imoveis) - (success_count or 0))
+            except:
+                rejeitados_db += len(batch_imoveis)
+            batch_imoveis, batch_historico = [], []
 
-    # Processa último parcial
     if batch_imoveis:
-        enviar_batch(batch_imoveis, modalidade, data_geracao, None, None)
-        aceitos += len(batch_imoveis)
+        try:
+            success_count = enviar_batch_com_historico(batch_imoveis, batch_historico)
+            aceitos += (success_count or 0)
+            rejeitados_db += (len(batch_imoveis) - (success_count or 0))
+        except:
+            rejeitados_db += len(batch_imoveis)
 
-    print(f"\n[RESUMO] {nome_arquivo}")
-    print(f"  Total lidos    : {total_lidos}")
-    print(f"  Aceitos        : {aceitos}")
-    print(f"  Rejeitados     : {rejeitados}")
-    return nome_arquivo, aceitos
+    rejeitados = total_lidos - aceitos
+    stats = {
+        "total_lidos": total_lidos, 
+        "aceitos": aceitos, 
+        "rejeitados": rejeitados,
+        "detalhe": {
+            "modalidade": rejeitados_mod,
+            "desconto": rejeitados_desc,
+            "banco_dados": rejeitados_db
+        }
+    }
+    return nome_arquivo, stats
 
-def enviar_batch(batch, modalidade, data_geracao, row_example, c_num_example):
+def enviar_batch_com_historico(batch_imoveis, batch_historico):
     try:
-        res = supabase.table("imoveis").upsert(batch, on_conflict="imovel_caixa_numero").execute()
+        res = supabase.table("imoveis").upsert(batch_imoveis, on_conflict="imovel_caixa_numero").execute()
         if res.data:
-            hist_batch = []
-            for item in res.data:
-                valor_venda = item.get('imovel_caixa_valor_venda')
-                valor_avaliacao = item.get('imovel_caixa_valor_avaliacao')
-                desconto_pct = item.get('imovel_caixa_valor_desconto_percentual', 0.0)
-                selo = item.get('imovel_caixa_post_selo_oportunidade')
-
-                hist_batch.append({
-                    "imovel_id": item['imoveis_id'],
-                    "imovel_caixa_modalidade": item['imovel_caixa_modalidade'],
-                    "imovel_caixa_criacao": item['imovel_caixa_criacao'],
-                    "imovel_caixa_valor_venda": valor_venda,
-                    "imovel_caixa_valor_avaliacao": valor_avaliacao,
-                    "imovel_caixa_valor_desconto_percentual": desconto_pct,
-                    "imovel_caixa_valor_desconto_moeda": max(0.0, float(valor_avaliacao - valor_venda)),
-                    "imovel_caixa_pagamento_financiamento": item['imovel_caixa_pagamento_financiamento'],
-                    "imovel_caixa_pagamento_fgts": item['imovel_caixa_pagamento_fgts'],
-                    "imovel_caixa_pagamento_anotacoes": item.get('imovel_caixa_pagamento_anotacoes'),
-                    "imovel_caixa_pagamento_condominio": item.get('imovel_caixa_pagamento_condominio'),
-                    "etiqueta_oportunidade": selo,
-                    "created_at": datetime.now().isoformat()
-                })
-            if hist_batch:
-                supabase.table("atualizacoes_imovel").insert(hist_batch).execute()
+            # Upsert counts only successful operations. In Supabase, this returns the rows affected.
+            map_ids = {item['imovel_caixa_numero']: item['imoveis_id'] for item in res.data}
+            final_hist = []
+            for h in batch_historico:
+                real_id = map_ids.get(h.pop("numero"))
+                if real_id:
+                    h["imovel_id"] = real_id
+                    final_hist.append(h)
+            if final_hist:
+                supabase.table("atualizacoes_imovel").insert(final_hist).execute()
+            return len(res.data)
+        return 0
     except Exception as e:
-        print(f"  [ERRO BATCH]: {e}")
-
-
-def main():
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        print("[ERRO] Variáveis de ambiente SUPABASE_URL ou SUPABASE_KEY não configuradas.")
-        return
-
-    csv_files = glob.glob(os.path.join(CSV_DIR, "*.csv"))
-    if not csv_files:
-        print(f"[AVISO] Nenhum arquivo CSV encontrado em: {CSV_DIR}")
-        return
-
-    print(f"Iniciando processamento de {len(csv_files)} arquivos.")
-    
-    for f in csv_files:
-        ingest_csv(f)
-
-    print("\n[FIM] Processamento concluído. Verifique o banco de dados e o histórico.")
+        print(f"  [ERRO CRÍTICO BATCH]: {e}")
+        raise e # Re-raise to stop the process and signal error in logs
 
 if __name__ == "__main__":
-    main()
+    csv_files = glob.glob(os.path.join(CSV_DIR, "*.csv"))
+    for f in csv_files: ingest_csv(f)

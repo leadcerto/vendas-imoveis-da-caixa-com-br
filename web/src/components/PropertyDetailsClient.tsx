@@ -143,20 +143,20 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-1">
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Link Permanente</p>
-              <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">{property.imovel_caixa_post_link_permanente}</p>
+              <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_link_permanente}</p>
             </div>
             <div className="space-y-1">
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Meta Descrição</p>
-              <p className="text-[11px] font-bold text-gray-600 line-clamp-2 bg-white p-2 rounded-lg border border-gray-100 italic lowercase">{property.imovel_caixa_post_descricao}</p>
+              <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_descricao}</p>
             </div>
             <div className="space-y-1">
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Palavra-Chave</p>
-              <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">{property.imovel_caixa_post_palavra_chave}</p>
+              <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_palavra_chave}</p>
             </div>
             <div className="space-y-1 lg:col-span-1">
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque (Square)</p>
               <div className="space-y-2">
-                <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">
+                <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">
                   {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                 </p>
                 <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">

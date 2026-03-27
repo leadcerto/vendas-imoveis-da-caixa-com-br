@@ -153,13 +153,13 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
               <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Palavra-Chave</p>
               <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">{property.imovel_caixa_post_palavra_chave}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque</p>
+            <div className="space-y-1 lg:col-span-1">
+              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque (Square)</p>
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-gray-600 truncate bg-white p-2 rounded-lg border border-gray-100 italic lowercase">
                   {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                 </p>
-                <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-gray-200 bg-white">
+                <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">
                    <img 
                      src={property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                      alt="Preview Destaque"

@@ -35,3 +35,7 @@ senhas.txt
 
 # Anotações e trabalho local
 /trabalho/
+
+# Imagens geradas (não versionar 11.000+ arquivos)
+/web/public/imagens-destaque/
+/imagens/imagem-destaque/

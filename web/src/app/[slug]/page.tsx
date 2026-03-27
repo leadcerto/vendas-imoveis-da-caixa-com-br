@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PropertyDetailsClient from '@/components/PropertyDetailsClient';
 
@@ -11,11 +12,25 @@ interface Props {
  */
 async function getPropertyData(slug: string) {
   // 1. Dados Básicos do Imóvel buscando pelo SLUG na view 'properties'
-  const { data: property, error } = await supabase
+  let { data: property, error } = await supabase
     .from('properties')
     .select('*')
     .eq('slug', slug)
     .single();
+
+  // Redirecionamento de Legado: Se não encontrar e o slug tiver underscore, tenta com hífen
+  if (!property && slug.includes('_')) {
+    const dashSlug = slug.replace(/_/g, '-');
+    const { data: retryData } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('slug', dashSlug)
+      .single();
+    
+    if (retryData) {
+      return { redirect: dashSlug };
+    }
+  }
 
   if (!property) {
     return null;
@@ -57,6 +72,11 @@ async function getPropertyData(slug: string) {
     description: property.post_descricao || '',
     imovel_caixa_link_imagem: property.foto || '',
     url_imagem: property.foto || '',
+    // Campos SEO do Banco (Renomeados na View)
+    imovel_caixa_post_titulo: property.post_titulo || '',
+    imovel_caixa_post_descricao: property.post_descricao || '',
+    imovel_caixa_post_palavra_chave: property.post_palavra_chave || '',
+    imovel_caixa_post_link_permanente: property.slug || '',
     imovel_caixa_post_imagem_destaque: property.post_imagem_destaque || '',
     post_link_permanente: property.slug || '',
     // Campos de cartório
@@ -157,6 +177,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PropertyPage({ params }: Props) {
   const { slug } = await params;
   const data = await getPropertyData(slug);
+
+  if (data?.redirect) {
+    redirect(`/${data.redirect}`);
+  }
 
   if (!data) {
     return (

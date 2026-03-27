@@ -58,7 +58,13 @@ def format_currency(value):
         return "0,00"
 
 def generate_seo_fields(numero, modalidade, uf, cidade, bairro, desconto_moeda, tipo):
-    # Regras solicitadas pelo usuário
+    # Sanitização para evitar 'None' nos textos
+    tipo = str(tipo or 'Imóvel').replace('None', 'Imóvel')
+    bairro = str(bairro or '').replace('None', '')
+    cidade = str(cidade or '').replace('None', '')
+    uf = str(uf or '').replace('None', '')
+
+    # Regras solicitadas pelo usuário (🔴, 🧡💙, ⚠️)
     # imovel_caixa_post_titulo: 🔴 [tipo] [bairro] [cidade] [uf] [numero] Imóvel CAIXA 🧡💙
     titulo = f"🔴 {tipo} {bairro} {cidade} {uf} {numero} Imóvel CAIXA 🧡💙"
     
@@ -75,9 +81,15 @@ def generate_seo_fields(numero, modalidade, uf, cidade, bairro, desconto_moeda, 
     # imovel_caixa_post_link_permanente: [tipo]-[bairro]-[cidade]-[uf]-[numero]
     def normalize_seo_part(text):
         if not text: return ""
+        # Remove acentos e mantém minúsculo
         n = "".join(c for c in unicodedata.normalize('NFD', str(text).strip().lower())
                     if unicodedata.category(c) != 'Mn')
-        return n.replace(" ", "_").replace("-", "_").replace("(", "").replace(")", "")
+        # Espaços e hifens internos viram underscore para componentes
+        # Componentes serão separados por hifens na string final
+        import re
+        n = n.replace(" ", "_").replace("-", "_")
+        n = re.sub(r'[^a-z0-9_]', '', n)
+        return n
 
     t_s = normalize_seo_part(tipo)
     b_s = normalize_seo_part(bairro)

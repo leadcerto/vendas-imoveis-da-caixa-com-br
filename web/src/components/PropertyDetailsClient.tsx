@@ -17,6 +17,7 @@ import { useWhatsApp } from '@/context/WhatsAppContext';
 import { getLocalImagePath, getCorrectedCaixaUrl } from '@/lib/imageUtils';
 import { formatWhatsAppLink } from '@/lib/whatsapp';
 import { parsePropertyDescription } from '@/lib/propertyUtils';
+import { supabase } from '@/lib/supabase';
 
 interface PropertyDetailsProps {
   property: any;

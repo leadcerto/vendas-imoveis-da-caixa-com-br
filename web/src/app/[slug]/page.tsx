@@ -14,7 +14,7 @@ async function getPropertyData(slug: string) {
   // 1. Dados Básicos do Imóvel buscando pelo SLUG na view 'properties'
   let { data: property, error } = await supabase
     .from('properties')
-    .select('*')
+    .select('*, investment_params:grupos_imovel(*)')
     .eq('slug', slug)
     .single();
 
@@ -41,7 +41,7 @@ async function getPropertyData(slug: string) {
     .from('atualizacoes_imovel')
     .select('*')
     .eq('imovel_id', property.id)
-    .order('imovel_caixa_criacao', { ascending: false });
+    .order('imovel_caixa_data_criacao', { ascending: false });
 
   // Normalização extremamente robusta utilizando os campos da VIEW
   const normalizedProp = {
@@ -57,7 +57,7 @@ async function getPropertyData(slug: string) {
     imovel_caixa_pagamento_fgts: property.permite_fgts || false,
     imovel_caixa_pagamento_anotacoes: property.anotacoes_pagamento || '',
     imovel_caixa_pagamento_condominio: Number(property.debito_condominio || 0),
-    imovel_caixa_criacao: historyRaw?.[0]?.imovel_caixa_criacao,
+    imovel_caixa_data_criacao: historyRaw?.[0]?.imovel_caixa_data_criacao,
     bedrooms: Number(property.quartos || 0),
     bathrooms: Number(property.banheiros || 0),
     garage: Number(property.vagas || 0),
@@ -89,7 +89,7 @@ async function getPropertyData(slug: string) {
   };
 
   const history = historyRaw?.map(h => ({
-    date_update: h.imovel_caixa_criacao,
+    date_update: h.imovel_caixa_data_criacao,
     sale_value: Number(h.imovel_caixa_valor_venda || 0),
     valuation_value: Number(h.imovel_caixa_valor_avaliacao || 0),
     source: h.imovel_caixa_modalidade || 'Atualização'
@@ -140,9 +140,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://venda.imoveisdacaixa.com.br';
   
-  const imageUrl = property.imovel_caixa_post_imagem_destaque 
-    ? `${baseUrl}${property.imovel_caixa_post_imagem_destaque}`
-    : property.url_imagem;
+  // Prioridade da imagem OG (exibida ao compartilhar no WhatsApp):
+  // 1ª: imagem destaque no Supabase Storage (URL absoluta e pública, gerada pelo ingest)
+  // 2ª: URL direta da foto da CAIXA (fallback sempre disponível)
+  const featuredImage = property.imovel_caixa_post_imagem_destaque;
+  const caixaImage    = property.imovel_caixa_link_imagem || property.url_imagem;
+
+  const imageUrl = (featuredImage && featuredImage.startsWith('http'))
+    ? featuredImage
+    : caixaImage || `${baseUrl}/placeholder.jpg`;
+
+
 
   return {
     title: `${title} | Oportunidades Caixa`,

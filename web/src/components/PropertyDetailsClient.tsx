@@ -14,9 +14,9 @@ import {
 } from 'react-icons/io5';
 import WhatsAppFloating from '@/components/WhatsAppFloating';
 import { useWhatsApp } from '@/context/WhatsAppContext';
-import { supabase } from '@/lib/supabase';
 import { getLocalImagePath, getCorrectedCaixaUrl } from '@/lib/imageUtils';
 import { formatWhatsAppLink } from '@/lib/whatsapp';
+import { parsePropertyDescription } from '@/lib/propertyUtils';
 
 interface PropertyDetailsProps {
   property: any;
@@ -90,12 +90,16 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
     setWhatsAppData({
       propertyNumber: property.property_number,
       bairro: property.neighborhood,
-      cidade: `${property.city}-${property.state}`,
+      cidade: property.city,
+      uf: property.state,
+      preco: property.price,
+      tipo: property.property_type || 'Imóvel',
       imobiliaria: imobiliaria
     });
     
     return () => resetWhatsAppData();
-  }, [property.property_number, property.neighborhood, property.city, property.state, imobiliaria, setWhatsAppData, resetWhatsAppData]);
+  }, [property.property_number, property.neighborhood, property.city, property.state, property.price, property.property_type, imobiliaria, setWhatsAppData, resetWhatsAppData]);
+
 
   // Helper for Personalized WhatsApp link
   const getWhatsAppLink = (customMessage?: string) => {
@@ -344,7 +348,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                     </p>
                   </div>
                   <p className="text-gray-600 leading-relaxed font-medium">
-                    {property.description}
+                    {parsePropertyDescription(property.description, property)}
                   </p>
                 </div>
               </div>

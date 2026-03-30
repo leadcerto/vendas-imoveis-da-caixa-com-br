@@ -6,6 +6,9 @@ interface WhatsAppData {
   propertyNumber?: string;
   bairro?: string;
   cidade?: string;
+  uf?: string;
+  preco?: number;
+  tipo?: string;
   imobiliaria?: any;
 }
 

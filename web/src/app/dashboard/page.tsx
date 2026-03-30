@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import AdminPageLayout from '@/components/layout/AdminPageLayout';
 import CSVUpload from '@/components/admin/CSVUpload';
 import ImobiliariaManager from '@/components/admin/ImobiliariaManager';
+import DiagnosticoConformidade from '@/components/admin/DiagnosticoConformidade';
 import { 
   IoStatsChartOutline, 
   IoDocumentTextOutline, 
@@ -167,6 +168,11 @@ export default function DashboardPage() {
             </div>
           </Card>
         </div>
+
+        {/* Diagnóstico de Conformidade */}
+        <section>
+          <DiagnosticoConformidade />
+        </section>
 
         {/* Imobiliarias Management Section */}
         <section className="mb-10">

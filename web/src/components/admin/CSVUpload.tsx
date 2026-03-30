@@ -75,7 +75,7 @@ export default function CSVUpload() {
       <div className="relative group">
         <input 
           type="file" 
-          accept=".csv"
+          accept=".csv,.xlsx,.xls"
           onChange={handleFileUpload}
           disabled={isUploading}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-20"

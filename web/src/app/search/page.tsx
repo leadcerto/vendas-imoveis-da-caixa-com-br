@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import PropertyCard from '@/components/PropertyCard';
 import { IoFilterOutline, IoSearchOutline, IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5';
 import Link from 'next/link';
-import WhatsAppFloating from '@/components/WhatsAppFloating';
+
 import { useWhatsApp } from '@/context/WhatsAppContext';
 
 function SearchResultsContent() {
@@ -128,7 +128,7 @@ function SearchResultsContent() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      <WhatsAppFloating />
+
 
       <main className="relative max-w-7xl mx-auto px-4 py-12 z-10">
         {/* Background Decor matching landing page */}

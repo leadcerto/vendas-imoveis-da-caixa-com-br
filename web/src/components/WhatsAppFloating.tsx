@@ -5,15 +5,14 @@ import { useEffect, useState } from 'react';
 import { useWhatsApp } from '../context/WhatsAppContext';
 import { formatWhatsAppLink } from '@/lib/whatsapp';
 
+/**
+ * Botão flutuante de WhatsApp.
+ * Aparece SOMENTE na página de detalhes do imóvel (rota com slug).
+ * A imobiliária exibida é a responsável pela UF do imóvel.
+ */
 export default function WhatsAppFloating() {
   const pathname = usePathname();
   const { whatsAppData } = useWhatsApp();
-  if (pathname === '/busca-imoveis') return null;
-  
-  const imobiliaria = whatsAppData.imobiliaria;
-  const phone = imobiliaria?.imobiliaria_whatsapp_numero || "5521978822950";
-  const buttonImage = imobiliaria?.imobiliaria_whatsapp_botao || "/FaleComigo.png";
-  
   const [currentUrl, setCurrentUrl] = useState("");
 
   useEffect(() => {
@@ -22,16 +21,38 @@ export default function WhatsAppFloating() {
     }
   }, [pathname]);
 
+  // Só exibe na página de detalhe do imóvel.
+  // As páginas de detalhe são rotas dinâmicas que não são nenhuma das rotas conhecidas.
+  const rotasConhecidas = ['/', '/busca-imoveis', '/search', '/admin', '/dashboard'];
+  const isPropertyPage = !rotasConhecidas.some(r => pathname === r || pathname.startsWith(r + '/'));
+  
+  // Garante que há dados do imóvel carregados antes de exibir
+  const temDadosDoImovel = !!whatsAppData.propertyNumber;
+
+  if (!isPropertyPage || !temDadosDoImovel) return null;
+
+  const imobiliaria = whatsAppData.imobiliaria;
+  const phone       = imobiliaria?.imobiliaria_whatsapp_numero || "5521978822950";
+  const buttonImage = imobiliaria?.imobiliaria_whatsapp_botao  || "/FaleComigo.png";
+
   const getWhatsAppLink = () => {
-    let message = "";
-    if (whatsAppData.propertyNumber && whatsAppData.bairro && whatsAppData.cidade) {
-      // Message for property pages
-      message = `. 📌 Olá! Tenho interesse no Imóvel da Caixa número *${whatsAppData.propertyNumber}* localizado em *${whatsAppData.bairro}* - *${whatsAppData.cidade}*`;
-    } else {
-      // Message for general pages
-      message = `. 📌 Olá! Visitei o site de vocês e preciso de ajuda\n.\n[${currentUrl}]`;
-    }
-    
+    const numero  = whatsAppData.propertyNumber || '';
+    const bairro  = whatsAppData.bairro         || '';
+    const cidade  = whatsAppData.cidade          || '';
+    const uf      = whatsAppData.uf              || '';
+    const preco   = whatsAppData.preco
+      ? `R$ ${Number(whatsAppData.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+      : '';
+    const tipo    = whatsAppData.tipo            || 'Imóvel';
+
+    const message = [
+      `📌 Olá! Tenho interesse no *${tipo} da Caixa* número *${numero}*`,
+      `📍 Localizado em *${bairro}* - *${cidade}/${uf}*`,
+      preco ? `💰 Valor de venda: *${preco}*` : '',
+      `🔗 ${currentUrl}`,
+      `\nPode me ajudar com mais informações?`,
+    ].filter(Boolean).join('\n');
+
     return formatWhatsAppLink(phone, message);
   };
 

@@ -30,6 +30,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
   const { setWhatsAppData, resetWhatsAppData } = useWhatsApp();
   const [imobiliaria, setImobiliaria] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const [formData, setFormData] = useState({
     nome: '',
@@ -54,6 +55,12 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
       }
     };
     fetchImob();
+
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setIsAdmin(true);
+    };
+    checkAuth();
   }, [property.state]);
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
@@ -140,44 +147,46 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
       <main className="max-w-7xl mx-auto px-4 md:px-8">
         
         {/* BLOCO 0: SEO (Somente Admin no Futuro) */}
-        <section className="mt-8 mb-4 p-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] overflow-hidden">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Painel SEO Interno (Visualização Temporária)</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Link Permanente</p>
-              <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_link_permanente}</p>
+        {isAdmin && (
+          <section className="mt-8 mb-4 p-6 bg-gray-50 border-2 border-dashed border-gray-200 rounded-[32px] overflow-hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Painel SEO Interno (Visualização Temporária)</span>
             </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Meta Descrição</p>
-              <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_descricao}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Palavra-Chave</p>
-              <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_palavra_chave}</p>
-            </div>
-            <div className="space-y-1 lg:col-span-1">
-              <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque (Square)</p>
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">
-                  {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
-                </p>
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">
-                   <img 
-                     src={property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
-                     alt="Preview Destaque"
-                     className="w-full h-full object-cover"
-                     onError={(e) => {
-                       (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/f37021/white?text=Imagem+Padrao';
-                     }}
-                   />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Link Permanente</p>
+                <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_link_permanente}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Meta Descrição</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_descricao}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Palavra-Chave</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_palavra_chave}</p>
+              </div>
+              <div className="space-y-1 lg:col-span-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque (Square)</p>
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">
+                    {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
+                  </p>
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">
+                     <img 
+                       src={property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
+                       alt="Preview Destaque"
+                       className="w-full h-full object-cover"
+                       onError={(e) => {
+                         (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/f37021/white?text=Imagem+Padrao';
+                       }}
+                     />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
         
         {/* BLOCO 1: TÍTULO (H1) */}
         <section className="py-12 text-left">
@@ -1181,6 +1190,15 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
              ))}
           </div>
         </section>
+
+        {/* BLOCO 21: HASHTAGS SEO */}
+        {property.imovel_caixa_post_hashtags && (
+          <section className="py-8 bg-gray-50 flex justify-center text-center px-4 mt-8 rounded-t-[40px]">
+            <p className="text-[10px] font-bold text-gray-400 max-w-4xl tracking-widest leading-relaxed">
+              {property.imovel_caixa_post_hashtags}
+            </p>
+          </section>
+        )}
 
       </main>
 

@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
         source: '/images/destaque/:slug.jpg',
         destination: '/images/destaque/base.jpg',
       },
+      {
+        source: '/imagens/imagem-destaque/:slug.jpg',
+        destination: '/imagens/imagem-destaque/ImagemDestaque.jpg',
+      },
     ];
   },
   images: {

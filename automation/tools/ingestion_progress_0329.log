@@ -1,0 +1,39 @@
+­ƒÜÇ Pipeline de Ingest├úo da CAIXA ÔÇö Iniciando...
+   Filtros: Desconto >= 30.0% | Modalidades: ['Venda Online', 'Venda Direta Online']
+[INFO] Carregando dados mestres...
+[INFO] Dados mestres: 27 UFs | 5570 Cidades | 14859 Bairros | 14 Grupos | 16 Tipos | 8 Naturezas
+[INFO] Sincronizando cache de imagens (Supabase Storage)...
+   Ô£à 1500 imagens encontradas no Storage.
+
+[INFO] 1 arquivo(s) CSV encontrado(s).
+
+============================================================
+[PASSO 01] Processando: 03-29-Lista_imoveis_RJ.xlsx | UF padr├úo: RJ
+============================================================
+  [INFO] Lendo formato Excel (.xlsx)...
+  [DEBUG] Colunas encontradas: ['imovel_caixa_numero', 'imovel_caixa_endereco_uf', 'imovel_caixa_endereco_cidade', 'imovel_caixa_endereco_bairro', 'imovel_caixa_endereco_csv', 'imovel_caixa_valor_venda', 'imovel_caixa_valor_avaliacao', 'imovel_caixa_valor_desconto_percentual', 'imovel_caixa_pagamento_fgts', 'imovel_caixa_descricao_csv', 'imovel_caixa_modalidade', 'imovel_caixa_data_criacao', 'imovel_caixa_valor_desconto_moeda', 'imovel_caixa_link_acesso_direto', 'imovel_caixa_descricao_tipo']
+[PASSO 02] Aplicando filtros: Desconto >= 30.0% | Modalidades: ['Venda Online', 'Venda Direta Online']
+  [DEBUG] Rejeitado Mod: '611821.73'
+  [DEBUG] Rejeitado Mod: '150533.64'
+  [DEBUG] Rejeitado Mod: '168890.2'
+  [DEBUG] Rejeitado Mod: '289340.69'
+  [DEBUG] Rejeitado Mod: '412979.67'
+
+[PASSO 03] Resultado: 0 aceitos | 9049 rejeitados (mod:9049 | desc:0 | db:0)
+
+[PASSO 04] Nenhum im├│vel novo para scraping.
+
+[PASSO 05] Limpeza estrat├®gica: removendo modalidades n├úo aceitas...
+   Ô£à Nenhum im├│vel com modalidade inv├ílida para remover.
+
+============================================================
+­ƒôè RESUMO FINAL
+============================================================
+  ­ƒôä 03-29-Lista_imoveis_RJ.xlsx: 0/9049 aceitos
+
+  Ô£à Total: 0 im├│veis gravados de 9049 lidos
+  ­ƒöì Scraping: 0 im├│veis processados
+  Ô£¿ Limpeza de modalidades executada.
+============================================================
+­ƒÅü PIPELINE CONCLU├ìDO COM SUCESSO!
+

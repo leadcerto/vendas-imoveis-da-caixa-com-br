@@ -143,12 +143,17 @@ export default function DiagnosticoConformidade() {
   const [status, setStatus] = useState<'idle' | 'carregando' | 'erro'>('idle');
   const [mensagemErro, setMensagemErro] = useState('');
   const [progresso, setProgresso] = useState('');
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [ingestionLog, setIngestionLog] = useState<string[]>([]);
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
 
   const handleArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setLastFile(file);
     setStatus('carregando');
     setResultado(null);
     setProgresso('Lendo arquivo Excel...');
@@ -178,6 +183,50 @@ export default function DiagnosticoConformidade() {
 
     // Limpa o input para permitir reenvio do mesmo arquivo
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleIngest = async () => {
+    if (!lastFile) return;
+
+    setIsIngesting(true);
+    setIngestionLog(['Iniciando processo de ingestão...']);
+    
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', lastFile);
+      formData.append('action', 'ingest');
+
+      const response = await fetch('/api/diagnostico-imoveis', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.body) throw new Error('Falha ao iniciar stream de dados.');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const text = decoder.decode(value);
+        setIngestionLog(prev => {
+          const lines = text.split('\n').filter(l => l.trim());
+          const newLog = [...prev, ...lines];
+          return newLog.slice(-100); // Manter apenas as últimas 100 linhas
+        });
+
+        // Scroll suave para o fim do log
+        setTimeout(() => {
+          logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } catch (err: any) {
+      setIngestionLog(prev => [...prev, `❌ ERRO: ${err.message}`]);
+    } finally {
+      setIsIngesting(false);
+    }
   };
 
   return (
@@ -252,13 +301,61 @@ export default function DiagnosticoConformidade() {
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Arquivo analisado</p>
               <p className="font-black text-[#003870] uppercase tracking-tighter">{resultado.arquivo}</p>
             </div>
-            <button
-              onClick={() => { setResultado(null); setStatus('idle'); }}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#005CA9] transition-colors"
-            >
-              <IoRefreshOutline size={14} /> Analisar outro arquivo
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setResultado(null); setStatus('idle'); setLastFile(null); setIngestionLog([]); }}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#005CA9] transition-colors"
+              >
+                <IoRefreshOutline size={14} /> Analisar outro
+              </button>
+              
+              {!isIngesting && (
+                <button
+                  onClick={handleIngest}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-sm"
+                >
+                  <IoCloudUploadOutline size={14} /> Gravar no Banco
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Log de Ingestão em tempo real */}
+          {(isIngesting || ingestionLog.length > 0) && (
+            <div className="bg-black rounded-2xl p-5 font-mono text-[11px] border border-gray-800 shadow-2xl">
+              <div className="flex items-center justify-between mb-3 border-b border-gray-800 pb-2">
+                <p className="text-purple-400 font-black uppercase tracking-widest">Pipeline de Ingestão (7 Passos)</p>
+                {isIngesting && <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />}
+              </div>
+              <div className="space-y-1 max-h-60 overflow-y-auto custom-scrollbar text-gray-300">
+                {ingestionLog.map((line, i) => {
+                  const isError = line.includes('ERROR') || line.includes('❌');
+                  const isSuccess = line.includes('OK') || line.includes('SUCESSO');
+                  const isPhase = line.includes('---');
+                  return (
+                    <div key={i} className={`
+                      ${isError ? 'text-red-400' : isSuccess ? 'text-green-400' : isPhase ? 'text-blue-400 font-bold mt-2' : ''}
+                    `}>
+                      {line}
+                    </div>
+                  );
+                })}
+                <div ref={logEndRef} />
+              </div>
+              
+              {/* Barra de progresso visual simulada pela fase */}
+              <div className="mt-4 h-1 bg-gray-900 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-purple-500 transition-all duration-500" 
+                  style={{ 
+                    width: isIngesting 
+                      ? `${(ingestionLog.filter(l => l.includes('Step')).length / 7) * 100}%` 
+                      : ingestionLog.some(l => l.includes('FINALIZADO')) ? '100%' : '0%' 
+                  }} 
+                />
+              </div>
+            </div>
+          )}
 
           {/* Resumo numérico */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

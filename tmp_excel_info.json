@@ -1,0 +1,84 @@
+{
+    "columns": [
+        "data",
+        "imovel",
+        "uf",
+        "cidade",
+        "bairro",
+        "endereco",
+        "preco",
+        "avaliacao",
+        "desconto",
+        "financiamento",
+        "descricao",
+        "modalidade",
+        "link"
+    ],
+    "head": {
+        "data": {
+            "0": "2026-03-27",
+            "1": "2026-03-27",
+            "2": "2026-03-27"
+        },
+        "imovel": {
+            "0": "1444422364102",
+            "1": "1444408529752",
+            "2": "1444420892284"
+        },
+        "uf": {
+            "0": "RJ ",
+            "1": "RJ ",
+            "2": "RJ "
+        },
+        "cidade": {
+            "0": "ARARUAMA ",
+            "1": "ARARUAMA ",
+            "2": "ARARUAMA "
+        },
+        "bairro": {
+            "0": "BURACO DO PAN ",
+            "1": "NOVO HORIZONTE (IGUABINHA) ",
+            "2": "NOVO HORIZONTE (IGUABINHA) "
+        },
+        "endereco": {
+            "0": "RUA EXISTENTE, N. 90, CS 101 ",
+            "1": "RUA MONTE AZUL, N. 105, CS 01 LT 01 QD 30 ",
+            "2": "AVENIDA CENTRAL, N. 786, CS 112 LT 31 QD 43 PARATY "
+        },
+        "preco": {
+            "0": "611821.73",
+            "1": "150533.64",
+            "2": "168890.2"
+        },
+        "avaliacao": {
+            "0": "960000",
+            "1": "236200",
+            "2": "265003"
+        },
+        "desconto": {
+            "0": "36.27",
+            "1": "36.27",
+            "2": "36.27"
+        },
+        "financiamento": {
+            "0": "Não",
+            "1": "Sim",
+            "2": "Sim"
+        },
+        "descricao": {
+            "0": "Casa, 193.32 de área total, 193.32 de área privativa, 1288.65 de área do terreno,  6 qto(s), a.serv, WC, 1 sala(s), cozinha.",
+            "1": "Casa, 0.00 de área total, 61.66 de área privativa, 61.66 de área do terreno, 1 vaga(s) de garagem.",
+            "2": "Casa, 0.00 de área total, 72.93 de área privativa, 100.00 de área do terreno, 1 vaga(s) de garagem."
+        },
+        "modalidade": {
+            "0": "Venda Direta Online",
+            "1": "Venda Direta Online",
+            "2": "Venda Direta Online"
+        },
+        "link": {
+            "0": "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel=1444422364102",
+            "1": "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel=1444408529752",
+            "2": "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel=1444420892284"
+        }
+    }
+}

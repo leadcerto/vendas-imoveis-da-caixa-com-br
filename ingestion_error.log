@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "C:\Users\PICHAU\Desktop\antigravity\venda-imoveis-caixa\automation\tools\ingest_caixa_csv.py", line 69, in <module>
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY, options={"http_client": custom_client})
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\PICHAU\AppData\Local\Programs\Python\Python313\Lib\site-packages\supabase\_sync\client.py", line 380, in create_client
+    return Client.create(
+           ~~~~~~~~~~~~~^
+        supabase_url=supabase_url, supabase_key=supabase_key, options=options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\PICHAU\AppData\Local\Programs\Python\Python313\Lib\site-packages\supabase\_sync\client.py", line 108, in create
+    auth_header = options.headers.get("Authorization") if options else None
+                  ^^^^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'headers'

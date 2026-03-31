@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { spawn } from 'child_process'
+import path from 'path'
+import fs from 'fs'
+import os from 'os'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes de negócio (idênticas ao ingest_caixa_csv.py)
@@ -55,6 +59,55 @@ export async function POST(request: NextRequest) {
 
     if (!arquivo) {
       return NextResponse.json({ erro: 'Nenhum arquivo enviado.' }, { status: 400 })
+    }
+
+    const action = formData.get('action') as string | null
+
+    // ── INGESTÃO EM REAL-TIME (STREAMING) ──────────────────────────────────
+    if (action === 'ingest') {
+      const arrayBuffer = await arquivo.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      // Salvar arquivo temporário para o script Python
+      const tempDir = os.tmpdir()
+      const tempFilePath = path.join(tempDir, `ingest_${Date.now()}_${arquivo.name}`)
+      fs.writeFileSync(tempFilePath, buffer)
+
+      const pythonPath = process.env.PYTHON_PATH || 'python'
+      const scriptPath = path.resolve(process.cwd(), '..', 'automation', 'tools', 'ingest_caixa_csv.py')
+
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const child = spawn(pythonPath, [scriptPath, '--file', tempFilePath, '--yes'], {
+            env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+          })
+
+          child.stdout.on('data', (data) => {
+            controller.enqueue(encoder.encode(data.toString()))
+          })
+
+          child.stderr.on('data', (data) => {
+            // Também enviamos erros para o log de streaming para o usuário ver
+            controller.enqueue(encoder.encode(`ERROR: ${data.toString()}`))
+          })
+
+          child.on('close', (code) => {
+            controller.enqueue(encoder.encode(`\n--- PROCESSO FINALIZADO (SNC: ${code}) ---`))
+            controller.close()
+            // Limpar arquivo temporário
+            try { fs.unlinkSync(tempFilePath) } catch (e) {}
+          })
+        }
+      })
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
     }
 
     // ── 1. Ler o Excel ───────────────────────────────────────────────────────

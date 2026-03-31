@@ -4,3 +4,4 @@ python-Levenshtein
 unidecode
 supabase
 python-dotenv
+requests

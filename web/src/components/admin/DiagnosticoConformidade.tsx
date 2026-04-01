@@ -19,7 +19,8 @@ import { Card } from '@/components/ui';
 interface PassoResult {
   passo: number;
   nome: string;
-  ok: number;
+  finalizado: number;
+  processando: number;
   total: number;
   percentual: number;
   status: 'ok' | 'parcial' | 'critico';
@@ -48,6 +49,7 @@ interface DiagnosticoResult {
   conformes: { total: number };
   passos: PassoResult[];
   scoreGeral: number;
+  totalNoBanco: number;
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -68,9 +70,11 @@ function PassoCard({ passo }: { passo: PassoResult }) {
   const Icon = isOk ? IoCheckmarkCircleOutline : isParcial ? IoWarningOutline : IoAlertCircleOutline;
 
   return (
-    <div className={`rounded-2xl border p-4 ${bg}`}>
+    <div className={`rounded-2xl border p-5 transition-all hover:shadow-md ${bg}`}>
       <div className="flex items-start gap-3">
-        <Icon size={20} className={`${textColor} mt-0.5 shrink-0`} />
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isOk ? 'bg-green-100' : isParcial ? 'bg-amber-100' : 'bg-red-100'}`}>
+          <Icon size={22} className={textColor} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <p className={`text-[11px] font-black uppercase tracking-widest ${textColor}`}>
@@ -78,14 +82,32 @@ function PassoCard({ passo }: { passo: PassoResult }) {
             </p>
             <span className={`text-xs font-black ${textColor} shrink-0`}>{passo.percentual}%</span>
           </div>
+          
           {/* Barra de progresso */}
-          <div className="h-1.5 rounded-full bg-white/60 border border-white/80 overflow-hidden mb-2">
+          <div className="h-1.5 rounded-full bg-white/60 border border-white/80 overflow-hidden mb-3">
             <div
-              className={`h-full rounded-full transition-all ${isOk ? 'bg-green-500' : isParcial ? 'bg-amber-500' : 'bg-red-500'}`}
+              className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-green-500' : isParcial ? 'bg-amber-500' : 'bg-red-500'}`}
               style={{ width: `${passo.percentual}%` }}
             />
           </div>
-          <p className="text-[10px] text-gray-500 font-semibold">{passo.detalhes}</p>
+
+          {/* Novos campos: Finalizado e Em Processamento */}
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Finalizado</span>
+              <span className={`text-sm font-black ${isOk ? 'text-green-600' : 'text-gray-700'}`}>
+                {passo.finalizado.toLocaleString('pt-BR')}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Em processamento</span>
+              <span className={`text-sm font-black ${passo.processando > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                {passo.processando.toLocaleString('pt-BR')}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-gray-500 font-semibold leading-tight">{passo.detalhes}</p>
         </div>
       </div>
     </div>
@@ -99,6 +121,7 @@ function SecaoAmostra({
   icon: Icon,
   itens,
   renderItem,
+  children,
 }: {
   titulo: string;
   total: number;
@@ -106,9 +129,10 @@ function SecaoAmostra({
   icon: React.ElementType;
   itens: ItemAmostra[];
   renderItem: (item: ItemAmostra, i: number) => React.ReactNode;
+  children?: React.ReactNode;
 }) {
   const [aberto, setAberto] = useState(false);
-  if (total === 0) return null;
+  if (total === 0 && !children) return null;
 
   return (
     <div className={`rounded-2xl border ${color} overflow-hidden`}>
@@ -124,8 +148,9 @@ function SecaoAmostra({
         {aberto ? <IoChevronUpOutline /> : <IoChevronDownOutline />}
       </button>
       {aberto && (
-        <div className="px-4 pb-4 space-y-2 max-h-80 overflow-y-auto">
-          {itens.slice(0, 20).map(renderItem)}
+        <div className="px-4 pb-4 space-y-2 max-h-[800px] overflow-y-auto">
+          {children}
+          {itens.slice(0, 50).map(renderItem)}
           {total > 20 && (
             <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest pt-2">
               + {total - 20} registros não exibidos
@@ -392,19 +417,34 @@ export default function DiagnosticoConformidade() {
           {/* Seções expansíveis */}
           <div className="space-y-3">
             <SecaoAmostra
-              titulo="Novos — Não Importados Ainda"
+              titulo="RESUMO DA IMPORTAÇÃO:"
               total={resultado.novos.total}
-              color="border-orange-200 bg-orange-50/30 text-orange-700"
+              color="border-purple-200 bg-purple-50/10 text-purple-700"
               icon={IoInformationCircleOutline}
               itens={resultado.novos.amostra}
               renderItem={(item, i) => (
-                <div key={i} className="text-xs p-3 bg-white rounded-xl border border-orange-100 flex justify-between gap-2">
+                <div key={i} className="text-xs p-3 bg-white rounded-xl border border-purple-100 flex justify-between gap-2 shadow-sm">
                   <span className="font-black text-[#003870]">#{item.numero}</span>
                   <span className="text-gray-500 truncate">{item.bairro} · {item.cidade}/{item.uf}</span>
-                  <span className="font-bold text-orange-600 shrink-0">{item.desconto}</span>
+                  <span className="font-bold text-purple-600 shrink-0">{item.desconto}</span>
                 </div>
               )}
-            />
+            >
+              <div className="px-4 py-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-purple-100 bg-purple-50/20">
+                <div className="p-4 rounded-2xl bg-white border border-purple-100">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Novos Cadastros:</p>
+                  <p className="text-xl font-black text-purple-600">{resultado.novos.total.toLocaleString('pt-BR')}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white border border-purple-100">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Imóveis Atualizados:</p>
+                  <p className="text-xl font-black text-blue-600">{(resultado.conformes.total + resultado.divergentes.total).toLocaleString('pt-BR')}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white border border-purple-100">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Imóveis sem Atualização:</p>
+                  <p className="text-xl font-black text-gray-400">{(resultado.totalNoBanco - (resultado.conformes.total + resultado.divergentes.total)).toLocaleString('pt-BR')}</p>
+                </div>
+              </div>
+            </SecaoAmostra>
 
             <SecaoAmostra
               titulo="Com Divergências de Valores"

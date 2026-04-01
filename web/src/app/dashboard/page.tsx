@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import AdminPageLayout from '@/components/layout/AdminPageLayout';
-import CSVUpload from '@/components/admin/CSVUpload';
 import ImobiliariaManager from '@/components/admin/ImobiliariaManager';
 import DiagnosticoConformidade from '@/components/admin/DiagnosticoConformidade';
 import { 
@@ -121,13 +120,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Upload Section */}
-          <section>
-            <CSVUpload />
-          </section>
-
           {/* Activity Section */}
-          <Card className="p-8">
+          <div className="lg:col-span-2">
+            <Card className="p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-500">

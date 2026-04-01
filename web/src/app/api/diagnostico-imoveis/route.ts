@@ -10,7 +10,10 @@ import os from 'os'
 // Constantes de negócio (idênticas ao ingest_caixa_csv.py)
 // ─────────────────────────────────────────────────────────────────────────────
 const DESCONTO_MINIMO = 30.0
-const MODALIDADES_ACEITAS = ['venda online', 'venda direta online']
+const MODALIDADES_ACEITAS = [
+  'venda online', 
+  'venda direta online'
+]
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilitários
@@ -161,13 +164,18 @@ export async function POST(request: NextRequest) {
       let numero: number | null = null
       if (cNumero) {
         const raw = String(row[cNumero] ?? '').trim()
-        if (raw.toUpperCase().includes('E+') || raw.includes(',')) {
+        // Limpeza robusta: manter apenas dígitos
+        const apenasNumeros = raw.replace(/[^\d]/g, '')
+        
+        if (apenasNumeros.length >= 7) {
+          numero = parseInt(apenasNumeros)
+        } else if (raw.toUpperCase().includes('E+') || raw.includes(',')) {
+          // Tentar extrair do link se o número estiver corrompido
           numero = extrairNumeroFromLink(String(row[cLink ?? ''] ?? ''))
-        } else {
-          numero = parseInt(raw.replace('.', ''))
         }
       }
-      if (!numero || isNaN(numero)) continue
+
+      if (!numero || isNaN(numero)) continue;
 
       const modalidade = String(row[cModalidade ?? ''] ?? '').trim()
       const desconto_raw = parseBrl(row[cDesconto ?? ''])
@@ -203,6 +211,10 @@ export async function POST(request: NextRequest) {
     const rejeitados_todos = itensMapeados.filter(
       i => !MODALIDADES_ACEITAS.includes(i.modalidade.toLowerCase()) || i.desconto < DESCONTO_MINIMO
     )
+
+    const { count: totalNoBanco } = await supabaseAdmin
+      .from('imoveis')
+      .select('*', { count: 'exact', head: true })
 
     // ── 4. Buscar banco de dados ─────────────────────────────────────────────
     const numerosAprovados = aprovados.map(i => i.numero)
@@ -254,7 +266,7 @@ export async function POST(request: NextRequest) {
     const divergentes: (typeof aprovados[0] & { divergencias: string[] })[] = []
 
     // Contadores de checks dos 7 passos
-    let semSeo = 0, semHashtag = 0, semScraping = 0, semCartorio = 0, semCep = 0, semGrupo = 0, semLogradouro = 0
+    let semSeo = 0, semHashtag = 0, semScraping = 0, semMatricula = 0, semCep = 0, semLocalizacao = 0, semGrupo = 0, semLogradouro = 0, semCapa = 0
 
     for (const item of aprovados) {
       const db = mapaDB.get(item.numero)
@@ -268,18 +280,20 @@ export async function POST(request: NextRequest) {
       const temSeo = !!(db.imovel_caixa_post_link_permanente && db.imovel_caixa_post_titulo)
       const temHashtag = !!(db.imovel_caixa_post_hashtags)
       const temScraping = !!(db.imovel_caixa_detalhes_scraping)
-      const temCartorio = !!(db.imovel_caixa_cartorio_matricula)
+      const temMatricula = !!(db.imovel_caixa_cartorio_matricula)
       const temCep = !!(db.id_cep_imovel_caixa)
       const temGrupo = !!(db.id_grupo_imovel_caixa)
       const temLogradouro = !!(db.imovel_caixa_endereco_logradouro)
+      const temCapa = !!(db.imovel_caixa_post_imagem_destaque)
 
       if (!temSeo) semSeo++
       if (!temHashtag) semHashtag++
       if (!temScraping) semScraping++
-      if (!temCartorio) semCartorio++
+      if (!temMatricula) semMatricula++
       if (!temCep) semCep++
       if (!temGrupo) semGrupo++
       if (!temLogradouro) semLogradouro++
+      if (!temCapa) semCapa++
 
       // Verificar divergências de valores financeiros
       const ultimaAtualizacao = db.atualizacoes_imovel?.[0] ?? db.atualizacoes_imovel
@@ -316,19 +330,69 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 6. Score dos 7 passos ────────────────────────────────────────────────
-    const totalBanco = bancoDados.length || 1
+    const totalBanco = bancoDados.length
     const passos = [
-      { passo: 1, nome: 'Filtros & Importação', ok: aprovados.length - novos.length, total: aprovados.length, detalhes: `${novos.length} novos não importados ainda` },
-      { passo: 2, nome: 'SEO (slug, título, hashtags)', ok: totalBanco - semSeo - semHashtag, total: totalBanco, detalhes: `${semSeo} sem SEO · ${semHashtag} sem hashtags` },
-      { passo: 3, nome: 'Dados Calculados (grupo/financiamento)', ok: totalBanco - semGrupo, total: totalBanco, detalhes: `${semGrupo} imóveis sem grupo de preço associado` },
-      { passo: 4, nome: 'Scraping da CAIXA', ok: totalBanco - semScraping, total: totalBanco, detalhes: `${semScraping} imóveis sem dados de scraping` },
-      { passo: 5, nome: 'CEP', ok: totalBanco - semCep, total: totalBanco, detalhes: `${semCep} imóveis sem CEP relacionado` },
-      { passo: 6, nome: 'Cartório & Características', ok: totalBanco - semCartorio, total: totalBanco, detalhes: `${semCartorio} imóveis sem dados de cartório` },
-      { passo: 7, nome: 'Endereço Enriquecido', ok: totalBanco - semLogradouro, total: totalBanco, detalhes: `${semLogradouro} imóveis sem logradouro separado` },
+      { 
+        passo: 1, 
+        nome: 'Filtros & Importação', 
+        finalizado: aprovados.length - novos.length, 
+        processando: novos.length, 
+        total: aprovados.length, 
+        detalhes: novos.length > 0 ? `${novos.length} novos imóveis aguardando gravação.` : 'Todos os imóveis deste lote já estão no banco.' 
+      },
+      { 
+        passo: 2, 
+        nome: 'SEO (slug, título, hashtags)', 
+        finalizado: totalBanco - semSeo - semHashtag, 
+        processando: semSeo + semHashtag, 
+        total: totalBanco, 
+        detalhes: `${semSeo} sem slug/título, ${semHashtag} sem hashtags.` 
+      },
+      { 
+        passo: 3, 
+        nome: 'Resolução Financeira & Grupos', 
+        finalizado: totalBanco - semLocalizacao, 
+        processando: semLocalizacao, 
+        total: totalBanco, 
+        detalhes: `${semLocalizacao} aguardando categorização de grupos.` 
+      },
+      { 
+        passo: 4, 
+        nome: 'Scraping Detalhado (Site Caixa)', 
+        finalizado: totalBanco - semScraping, 
+        processando: semScraping, 
+        total: totalBanco, 
+        detalhes: `${semScraping} aguardando extração de FGTS e Matrícula.` 
+      },
+      { 
+        passo: 5, 
+        nome: 'Matrícula e Cartório', 
+        finalizado: totalBanco - semMatricula, 
+        processando: semMatricula, 
+        total: totalBanco, 
+        detalhes: `${semMatricula} aguardando dados de cartório.` 
+      },
+      { 
+        passo: 6, 
+        nome: 'Enriquecimento de Localização (CEP)', 
+        finalizado: totalBanco - semCep, 
+        processando: semCep, 
+        total: totalBanco, 
+        detalhes: `${semCep} imóveis aguardando processamento de coordenadas e endereço via IA.` 
+      },
+      { 
+        passo: 7, 
+        nome: 'Imagens & Vitrine (Capa)', 
+        finalizado: totalBanco - semCapa, 
+        processando: semCapa, 
+        total: totalBanco, 
+        detalhes: `${semCapa} sem imagem de destaque na vitrine.` 
+      },
     ].map(p => ({
       ...p,
-      percentual: Math.round((p.ok / p.total) * 100),
-      status: p.ok === p.total ? 'ok' : p.ok / p.total >= 0.8 ? 'parcial' : 'critico',
+      ok: p.finalizado, 
+      percentual: p.total > 0 ? Math.round((p.finalizado / p.total) * 100) : 0,
+      status: p.finalizado === p.total ? 'ok' : (p.total > 0 && p.finalizado / p.total >= 0.8) ? 'parcial' : 'critico',
     }))
 
     const scoreGeral = Math.round(passos.reduce((acc, p) => acc + p.percentual, 0) / passos.length)
@@ -377,6 +441,7 @@ export async function POST(request: NextRequest) {
       },
       passos: passos,
       scoreGeral,
+      totalNoBanco: totalNoBanco || 0,
     })
 
   } catch (err: any) {

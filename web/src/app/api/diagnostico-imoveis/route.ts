@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // ── 3. Processar linhas ──────────────────────────────────────────────────
     const itensMapeados: {
-      numero: number
+      numero: string
       uf: string
       cidade: string
       bairro: string
@@ -158,24 +158,26 @@ export async function POST(request: NextRequest) {
 
     let rejeitados_modalidade = 0
     let rejeitados_desconto = 0
+    const modalidades_encontradas: Record<string, number> = {}
 
     for (const row of rows) {
       // Número do imóvel
-      let numero: number | null = null
+      let numero: string | null = null
       if (cNumero) {
         const raw = String(row[cNumero] ?? '').trim()
         // Limpeza robusta: manter apenas dígitos
         const apenasNumeros = raw.replace(/[^\d]/g, '')
         
-        if (apenasNumeros.length >= 7) {
-          numero = parseInt(apenasNumeros)
+        if (apenasNumeros.length > 0) {
+          numero = apenasNumeros
         } else if (raw.toUpperCase().includes('E+') || raw.includes(',')) {
           // Tentar extrair do link se o número estiver corrompido
-          numero = extrairNumeroFromLink(String(row[cLink ?? ''] ?? ''))
+          const extraido = extrairNumeroFromLink(String(row[cLink ?? ''] ?? ''))
+          if (extraido) numero = String(extraido)
         }
       }
 
-      if (!numero || isNaN(numero)) continue;
+      if (!numero) continue;
 
       const modalidade = String(row[cModalidade ?? ''] ?? '').trim()
       const desconto_raw = parseBrl(row[cDesconto ?? ''])
@@ -187,7 +189,10 @@ export async function POST(request: NextRequest) {
       const modalidade_valida = MODALIDADES_ACEITAS.includes(modalidade.toLowerCase())
       const desconto_valido = desconto >= DESCONTO_MINIMO
 
-      if (!modalidade_valida) { rejeitados_modalidade++; }
+      if (!modalidade_valida) { 
+        rejeitados_modalidade++; 
+        modalidades_encontradas[modalidade] = (modalidades_encontradas[modalidade] || 0) + 1
+      }
       if (modalidade_valida && !desconto_valido) { rejeitados_desconto++; }
 
       itensMapeados.push({
@@ -254,10 +259,10 @@ export async function POST(request: NextRequest) {
       if (!error && data) bancoDados.push(...data)
     }
 
-    // Montar mapa de BD por número
-    const mapaDB = new Map<number, any>()
+    // Montar mapa de BD por número (normalizado para string)
+    const mapaDB = new Map<string, any>()
     for (const item of bancoDados) {
-      mapaDB.set(Number(item.imovel_caixa_numero), item)
+      mapaDB.set(String(item.imovel_caixa_numero), item)
     }
 
     // ── 5. Cruzamento ────────────────────────────────────────────────────────
@@ -405,6 +410,7 @@ export async function POST(request: NextRequest) {
         total: rejeitados_todos.length,
         modalidade: rejeitados_modalidade,
         desconto: rejeitados_desconto,
+        modalidadesEncontradas: modalidades_encontradas,
         amostra: rejeitados_todos.slice(0, 15).map(i => ({
           numero: i.numero,
           modalidade: i.modalidade,

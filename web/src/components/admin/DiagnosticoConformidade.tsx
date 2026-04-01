@@ -43,7 +43,13 @@ interface DiagnosticoResult {
   arquivo: string;
   totalLinhasExcel: number;
   aprovadosFiltros: number;
-  rejeitadosFiltros: { total: number; modalidade: number; desconto: number; amostra: ItemAmostra[] };
+  rejeitadosFiltros: { 
+    total: number; 
+    modalidade: number; 
+    desconto: number; 
+    modalidadesEncontradas?: Record<string, number>;
+    amostra: ItemAmostra[] 
+  };
   novos: { total: number; amostra: ItemAmostra[] };
   divergentes: { total: number; amostra: ItemAmostra[] };
   conformes: { total: number };
@@ -481,6 +487,23 @@ export default function DiagnosticoConformidade() {
             />
           </div>
 
+          {/* Novos Detalhes de Modalidades Encontradas */}
+          {resultado.rejeitadosFiltros.modalidadesEncontradas && Object.keys(resultado.rejeitadosFiltros.modalidadesEncontradas).length > 0 && (
+            <div className="p-4 rounded-2xl bg-red-50/50 border border-red-100">
+              <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2">Modalidades Rejeitadas no Excel:</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(resultado.rejeitadosFiltros.modalidadesEncontradas).map(([modalidade, count]) => (
+                  <div key={modalidade} className="px-3 py-1 bg-white border border-red-100 rounded-lg text-[10px] font-bold text-red-700">
+                    {modalidade}: <span className="text-red-500 font-black">{count}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[9px] text-red-400 mt-2 italic font-medium">
+                * Somente &quot;Venda Online&quot; e &quot;Venda Direta Online&quot; são aceitas pela sua regra de negócio.
+              </p>
+            </div>
+          )}
+
           {/* legenda de filtros rejeitados */}
           {resultado.rejeitadosFiltros.total > 0 && (
             <div className="flex gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -489,6 +512,16 @@ export default function DiagnosticoConformidade() {
           )}
         </div>
       )}
+      {/* Rodapé de Versão e Controle de Cache */}
+      <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
+        <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em]">
+          Controle de Conformidade v2.0 · Build 2026-04-01
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">Sistema Sincronizado</span>
+        </div>
+      </div>
     </Card>
   );
 }

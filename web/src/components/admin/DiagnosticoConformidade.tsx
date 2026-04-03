@@ -53,6 +53,11 @@ interface DiagnosticoResult {
   novos: { total: number; amostra: ItemAmostra[] };
   divergentes: { total: number; amostra: ItemAmostra[] };
   conformes: { total: number };
+  debug?: {
+    excel_sample: string[];
+    db_sample: any[];
+    matched_count: number;
+  };
   passos: PassoResult[];
   scoreGeral: number;
   totalNoBanco: number;
@@ -406,17 +411,41 @@ export default function DiagnosticoConformidade() {
 
           {/* Resumo numérico */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Total no Excel', valor: resultado.totalLinhasExcel, color: 'text-gray-700', bg: 'bg-gray-50 border-gray-200' },
-              { label: 'Aprovados pelos filtros', valor: resultado.aprovadosFiltros, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-              { label: 'Conformes no banco', valor: resultado.conformes.total, color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-              { label: 'Novos (não importados)', valor: resultado.novos.total, color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-            ].map(({ label, valor, color, bg }) => (
-              <div key={label} className={`rounded-2xl border p-4 ${bg}`}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">{label}</p>
-                <p className={`text-2xl font-black ${color}`}>{valor.toLocaleString('pt-BR')}</p>
-              </div>
-            ))}
+            <div className="rounded-2xl border p-4 bg-gray-50 border-gray-200">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Total no Excel</p>
+              <p className="text-2xl font-black text-gray-700">{resultado.totalLinhasExcel.toLocaleString('pt-BR')}</p>
+            </div>
+            <div className="rounded-2xl border p-4 bg-blue-50 border-blue-200">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Aprovados pelos filtros</p>
+              <p className="text-2xl font-black text-blue-700">{resultado.aprovadosFiltros.toLocaleString('pt-BR')}</p>
+            </div>
+            <div className="flex flex-col">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Conformes no banco</p>
+              <h3 className="text-4xl font-black text-green-600 tracking-tighter">
+                {resultado.conformes.total}
+              </h3>
+              {/* Debug ID monitor - Só aparece se estiver dando 0 mesmo com aprovados */}
+              {resultado.conformes.total === 0 && resultado.aprovadosFiltros > 0 && resultado.debug && (
+                <div className="mt-2 p-2 bg-gray-50 border border-dashed border-gray-200 rounded-lg">
+                  <p className="text-[7px] text-gray-400 font-bold uppercase mb-1">Amostra IDs (Debug)</p>
+                  <div className="flex flex-wrap gap-1">
+                    {resultado.debug.excel_sample?.slice(0, 3).map((id: string) => (
+                      <span key={id} className="text-[8px] bg-white px-1 border border-gray-200 rounded">{id}</span>
+                    ))}
+                  </div>
+                  <p className="text-[7px] text-gray-400 font-bold uppercase mt-1 mb-1">Banco IDs (Amostra)</p>
+                  <div className="flex flex-wrap gap-1">
+                    {resultado.debug.db_sample?.slice(0, 3).map((id: any) => (
+                      <span key={id} className="text-[8px] bg-red-50 text-red-400 px-1 border border-red-100 rounded">{String(id)}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="rounded-2xl border p-4 bg-orange-50 border-orange-200">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Novos (não importados)</p>
+              <p className="text-2xl font-black text-orange-700">{resultado.novos.total.toLocaleString('pt-BR')}</p>
+            </div>
           </div>
 
           {/* Score geral */}

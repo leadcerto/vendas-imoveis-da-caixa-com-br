@@ -295,8 +295,12 @@ export async function POST(request: NextRequest) {
     // Montar mapa de BD por número (normalizado para string)
     const mapaDB = new Map<string, any>()
     for (const item of bancoDados) {
-      mapaDB.set(String(item.imovel_caixa_numero), item)
+      if (item.imovel_caixa_numero) {
+        mapaDB.set(String(item.imovel_caixa_numero), item)
+      }
     }
+
+    console.log(`[diagnostico-imoveis] MapaDB pronto com ${mapaDB.size} chaves. Ex:`, Array.from(mapaDB.keys()).slice(0, 5))
 
     // ── 5. Cruzamento ────────────────────────────────────────────────────────
     const novos: typeof aprovados = []
@@ -482,6 +486,11 @@ export async function POST(request: NextRequest) {
       passos: passos,
       scoreGeral,
       totalNoBanco: totalNoBanco || 0,
+      debug: {
+        excel_sample: aprovados.slice(0, 10).map(i => i.numero),
+        db_sample: bancoDados.slice(0, 10).map(i => i.imovel_caixa_numero),
+        matched_count: conformes.length + divergentes.length
+      }
     })
 
   } catch (err: any) {

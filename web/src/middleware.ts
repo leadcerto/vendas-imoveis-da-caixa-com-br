@@ -2,6 +2,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const url = request.nextUrl.clone()
+
+  // Skip middleware for health check immediately
+  if (url.pathname === '/api/health') {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -34,13 +41,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  const url = request.nextUrl.clone()
-
-  // Skip middleware for health check
-  if (url.pathname === '/health') {
-    return response
-  }
 
   // Protect /dashboard route
   if (url.pathname.startsWith('/dashboard')) {

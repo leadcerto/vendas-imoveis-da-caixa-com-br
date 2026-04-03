@@ -37,6 +37,11 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
+  // Skip middleware for health check
+  if (url.pathname === '/health') {
+    return response
+  }
+
   // Protect /dashboard route
   if (url.pathname.startsWith('/dashboard')) {
     if (!user) {

@@ -189,9 +189,10 @@ def main():
             # Fazer upload físico para o Storage como o usuário pediu
             upload_imagem_destaque_to_storage(slug, master_image_bytes)
             
-            # Image SEO Tags
-            tag_alt = f"{tip} em {bai}, {cid} - {uf}"
-            tag_title = f"{tip} com Desconto de {desconto_abreviado}"
+            # Image SEO Tags (Nova Regra: Fachada de [tipo] à venda em [bairro], [cidade] [uf])
+            tag_seo = f"Fachada de {tipo_fmt} à venda em {bai}, {cid} {uf}"
+            tag_alt = tag_seo
+            tag_title = tag_seo
             
             lote_imoveis_update.append({
                 "imoveis_id": iid,
@@ -201,6 +202,8 @@ def main():
                 "imovel_caixa_post_palavra_chave": palavra_chave,
                 "imovel_caixa_post_imagem_destaque_tag_alt": tag_alt,
                 "imovel_caixa_post_imagem_destaque_tag_title": tag_title,
+                "imovel_caixa_link_imagem_tag_alt": tag_alt,
+                "imovel_caixa_link_imagem_tag_title": tag_title,
                 "imovel_caixa_post_hashtags": get_hashtags(uf, cid, bai, tip),
                 "imovel_caixa_post_imagem_destaque": imagem_destaque_exata,
                 "id_grupo_imovel_caixa": grupo_id,

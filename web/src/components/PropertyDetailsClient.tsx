@@ -167,15 +167,27 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                 <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_palavra_chave}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag ALT da Imagem</p>
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag ALT (Destaque/Square)</p>
                 <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
                   {property.imovel_caixa_post_imagem_destaque_tag_alt}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag Title da Imagem</p>
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag Title (Destaque/Square)</p>
                 <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
                   {property.imovel_caixa_post_imagem_destaque_tag_title}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag ALT (Link Original)</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
+                  {property.imovel_caixa_link_imagem_tag_alt}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag Title (Link Original)</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
+                  {property.imovel_caixa_link_imagem_tag_title}
                 </p>
               </div>
               <div className="space-y-1 lg:col-span-2">
@@ -221,10 +233,11 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
         {/* BLOCO 2: IMAGEM (H2) */}
         <section className="mb-12 relative group cursor-pointer" onClick={() => window.open(getWhatsAppLink(), '_blank')}>
           <h2 className="sr-only">Imagem</h2>
-          <div className="relative w-full h-[300px] md:h-[500px] overflow-hidden rounded-[40px] shadow-2xl bg-white flex items-center justify-center">
+          <figure className="relative w-full h-[300px] md:h-[500px] overflow-hidden rounded-[40px] shadow-2xl bg-white flex items-center justify-center">
              <img 
                src={getCorrectedCaixaUrl(property.property_number)}
-               alt={property.imovel_caixa_post_titulo}
+               alt={property.imovel_caixa_post_imagem_destaque_tag_alt}
+               title={property.imovel_caixa_post_imagem_destaque_tag_title}
                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
                onError={(e) => {
                  const target = e.target as HTMLImageElement;
@@ -235,29 +248,31 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                  const originalCaixa = property.imovel_caixa_link_imagem;
                  
                  if (currentSrc === correctedCaixa) {
-                   // Se falhou a da Caixa corrigida, tenta a local (Featured)
                    target.src = localPath;
                  } else if (currentSrc.includes('/imagens-destaque/') && originalCaixa && originalCaixa !== correctedCaixa) {
-                   // Se falhou a local, tenta a original do banco
                    target.src = originalCaixa;
                  } else {
-                   // Se tudo falhou, deixa o renderizador lidar (mostra o icone fallback abaixo)
                    target.style.display = 'none';
                    const parent = target.parentElement;
                    if (parent) {
+                     const figcap = parent.querySelector('figcaption');
+                     if (figcap) (figcap as HTMLElement).style.display = 'none';
                      const fallbackIcon = parent.querySelector('.fallback-icon');
                      if (fallbackIcon) (fallbackIcon as HTMLElement).style.display = 'flex';
                    }
                  }
                }}
              />
+             <figcaption className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-black uppercase py-3 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-500">
+               "Imóvel Caixa disponível para venda"
+             </figcaption>
              <div className="fallback-icon hidden w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex-col items-center justify-center p-12 text-center">
                <IoHomeOutline size={80} className="text-gray-300 mb-6" />
                <h3 className="text-3xl font-black text-gray-400 uppercase tracking-tighter max-w-xl">
                  {property.imovel_caixa_post_titulo}
                </h3>
              </div>
-          </div>
+          </figure>
         </section>
 
         {/* BLOCO 3: VALORES (H2) - ⭐DESTAQUE MÁXIMO⭐ */}

@@ -46,7 +46,7 @@ async function getPropertyData(slug: string) {
   // 1.5. Busca campos SEO de imagem que não estão na VIEW (Busca direta na tabela imoveis)
   const { data: seoTags } = await supabase
     .from('imoveis')
-    .select('imovel_caixa_post_imagem_destaque_tag_alt, imovel_caixa_post_imagem_destaque_tag_title')
+    .select('imovel_caixa_post_imagem_destaque_tag_alt, imovel_caixa_post_imagem_destaque_tag_title, imovel_caixa_link_imagem_tag_alt, imovel_caixa_link_imagem_tag_title')
     .eq('imoveis_id', property.id)
     .single();
 
@@ -88,6 +88,8 @@ async function getPropertyData(slug: string) {
     // Novos campos SEO de Imagem (Buscados separadamente)
     imovel_caixa_post_imagem_destaque_tag_alt: seoTags?.imovel_caixa_post_imagem_destaque_tag_alt || '',
     imovel_caixa_post_imagem_destaque_tag_title: seoTags?.imovel_caixa_post_imagem_destaque_tag_title || '',
+    imovel_caixa_link_imagem_tag_alt: seoTags?.imovel_caixa_link_imagem_tag_alt || '',
+    imovel_caixa_link_imagem_tag_title: seoTags?.imovel_caixa_link_imagem_tag_title || '',
     post_link_permanente: property.slug || '',
     // Campos de cartório
     cartorio_matricula: property.cartorio_matricula,

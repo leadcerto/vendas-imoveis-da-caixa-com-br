@@ -241,12 +241,10 @@ export async function POST(request: NextRequest) {
       i => !MODALIDADES_ACEITAS.includes(i.modalidade.toLowerCase()) || i.desconto < DESCONTO_MINIMO
     )
 
-    const { count: totalNoBanco } = await supabaseAdmin
-      .from('imoveis')
-      .select('*', { count: 'exact', head: true })
-
     // ── 4. Buscar banco de dados ─────────────────────────────────────────────
     const numerosAprovados = aprovados.map(i => i.numero)
+    const ufsNoExcel = Array.from(new Set(aprovados.map(i => i.uf)))
+    
     const PAGE_SIZE = 500
     const bancoDados: any[] = []
 
@@ -311,10 +309,9 @@ export async function POST(request: NextRequest) {
     let semSeo = 0, semHashtag = 0, semScraping = 0, semMatricula = 0, semCep = 0, semLocalizacao = 0, semGrupo = 0, semLogradouro = 0, semCapa = 0
 
     for (const item of aprovados) {
-      const db = mapaDB.get(item.numero)
+      const db = mapaDB.get(String(item.numero))
 
       if (!db) {
-        // Se não achou, tentar converter item.numero (que veio do excel) denovo ou logar
         novos.push(item)
         continue
       }
@@ -438,6 +435,19 @@ export async function POST(request: NextRequest) {
       status: p.finalizado === p.total ? 'ok' : (p.total > 0 && p.finalizado / p.total >= 0.8) ? 'parcial' : 'critico',
     }))
 
+    // ── 6. Fora de Venda (No banco mas não no Excel para estas UFs) ──────────
+    // Filtrar mapaDB para itens das UFs do Excel que NÃO estão nos aprovados
+    const idsNoExcelSet = new Set(numerosAprovados)
+    const itensForaDeVenda = Array.from(mapaDB.values()).filter(dbItem => {
+      const eDaUf = ufsNoExcel.includes(String(dbItem.imovel_caixa_endereco_uf || '').trim().toUpperCase())
+      const naoEstaNoExcel = !idsNoExcelSet.has(String(dbItem.imovel_caixa_numero))
+      return eDaUf && naoEstaNoExcel
+    })
+
+    const { count: totalNoBanco } = await supabaseAdmin
+      .from('imoveis')
+      .select('*', { count: 'exact', head: true })
+
     const scoreGeral = Math.round(passos.reduce((acc, p) => acc + p.percentual, 0) / passos.length)
 
     return NextResponse.json({
@@ -482,6 +492,16 @@ export async function POST(request: NextRequest) {
       },
       conformes: {
         total: conformes.length,
+      },
+      foraDeVenda: {
+        total: itensForaDeVenda.length,
+        amostra: itensForaDeVenda.slice(0, 20).map(i => ({
+          numero: i.imovel_caixa_numero,
+          uf: i.imovel_caixa_endereco_uf,
+          cidade: i.imovel_caixa_endereco_cidade,
+          bairro: i.imovel_caixa_endereco_bairro,
+          updated_at: i.updated_at
+        }))
       },
       passos: passos,
       scoreGeral,

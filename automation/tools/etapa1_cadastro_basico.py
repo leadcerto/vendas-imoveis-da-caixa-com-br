@@ -90,6 +90,9 @@ def main():
     
     print(f"📊 Total de linhas encontradas: {total_linhas}")
     
+    numeros_processados_set = set()
+    ufs_processadas_set = set()
+    
     BATCH_SIZE = 200
     
     for start_idx in range(0, total_linhas, BATCH_SIZE):
@@ -108,6 +111,9 @@ def main():
                 # Lookup IDs
                 id_uf = estados_map.get(clean_name(uf_raw))
                 id_cidade = cidades_map.get((clean_name(cidade_raw), id_uf)) if id_uf else None
+                
+                if uf_raw: ufs_processadas_set.add(uf_raw.strip().upper())
+                numeros_processados_set.add(numero_imovel)
                 
                 # Campos para o cadastro do imóvel
                 imovel_data = {
@@ -147,9 +153,10 @@ def main():
             if novos_imoveis:
                 supabase.table("imoveis").insert(novos_imoveis).execute()
             
-            # Atualizar existentes (apenas Reset de Etapa)
+            # Atualizar existentes (apenas Reset de Etapa se for menor que 2)
+            # Regra Smart Match: se já passou da Etapa 2 (enriquecimento), não reseta para preservar SEO/Scraping
             if ids_existentes:
-                supabase.table("imoveis").update({"etapa_processamento": 1}).in_("imoveis_id", ids_existentes).execute()
+                supabase.rpc("reset_etapa_if_needed", {"target_ids": ids_existentes}).execute()
             
             # Recarregar IDs para o financeiro
             res_all = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero").in_("imovel_caixa_numero", lista_numeros).execute()
@@ -218,6 +225,33 @@ def main():
         except Exception as e:
             print(f"❌ Erro no lote: {e}")
             erros += len(lote_imoveis)
+
+    # 2. Lógica de Limpeza (Sold Properties - 120 dias)
+    if ufs_processadas_set:
+        print(f"\n🧹 Iniciando verificação de limpeza (Fora de Venda) para UF(s): {ufs_processadas_set}")
+        try:
+            # Pegamos todos os imóveis no banco desta UF que NÃO estão nesta lista
+            res_off = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero, updated_at")\
+                .in_("imovel_caixa_endereco_uf", list(ufs_processadas_set))\
+                .execute()
+            
+            fora_da_lista_ids = []
+            for item in res_off.data:
+                if int(item["imovel_caixa_numero"]) not in numeros_processados_set:
+                    # Verificar se a última atualização foi há mais de 120 dias
+                    # Note: idealmente checamos a tabela de histórico, mas updated_at é um bom proxy se não houver upsert agressivo
+                    dt_upd = datetime.datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00"))
+                    agora = datetime.datetime.now(datetime.timezone.utc)
+                    if (agora - dt_upd).days > 120:
+                        fora_da_lista_ids.append(item["imoveis_id"])
+            
+            if fora_da_lista_ids:
+                print(f"🗑️ Removendo {len(fora_da_lista_ids)} imóveis fora de venda (vencidos > 120 dias)...")
+                supabase.table("imoveis").delete().in_("imoveis_id", fora_da_lista_ids).execute()
+            else:
+                print("✨ Nenhum imóvel elegível para exclusão por tempo (limite 120 dias).")
+        except Exception as e:
+            print(f"⚠️ Erro no processo de limpeza: {e}")
 
     print(f"\n✅ ETAPA 1 CONCLUÍDA. Sucessos: {sucessos} | Erros: {erros}")
     print("Step 1/7: OK")

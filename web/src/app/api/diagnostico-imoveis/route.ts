@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Constantes de negócio (idênticas ao ingest_caixa_csv.py)
+// Constantes de negócio
 // ─────────────────────────────────────────────────────────────────────────────
 const DESCONTO_MINIMO = 30.0
 const MODALIDADES_ACEITAS = [
@@ -26,16 +26,13 @@ function parseBrl(val: unknown): number {
   let s = String(val).replace(/R\$|%/g, '').trim()
   if (!s || s === 'nan' || s === 'None') return 0
 
-  // 1.234,56 → 1234.56
   if (s.includes(',') && s.includes('.')) {
     s = s.replace(/\./g, '').replace(',', '.')
   } else if (s.includes(',')) {
     s = s.replace(',', '.')
   } else if (s.includes('.')) {
     const parts = s.split('.')
-    if (parts[parts.length - 1].length === 3) {
-      s = s.replace(/\./g, '') // milhar BR
-    }
+    if (parts[parts.length - 1].length === 3) s = s.replace(/\./g, '')
   }
   const n = parseFloat(s)
   return isNaN(n) ? 0 : n
@@ -48,405 +45,178 @@ function findCol(headers: string[], fragments: string[]): string | null {
   return null
 }
 
-// Extrai o número do imóvel da URL (fallback dado notação científica no Excel)
-function extrairNumeroFromLink(link: string): number | null {
-  const m = link?.match(/hdnimovel=(\d+)/i)
-  return m ? parseInt(m[1]) : null
+function normalizeID(val: any): string {
+  if (val === null || val === undefined) return '';
+  let s = String(val).trim();
+  // Remove .0 que às vezes o pandas/excel coloca
+  if (s.endsWith('.0')) s = s.slice(0, -2);
+  
+  // Trata notação científica (ex: 1.4444e13)
+  try {
+    if (s.toLowerCase().includes('e') || s.includes('.')) {
+      const num = Number(s);
+      if (!isNaN(num)) return BigInt(Math.floor(num)).toString();
+    }
+  } catch (e) {}
+
+  // Remove qualquer caractere que não seja número (evita "14.444.000...")
+  return s.replace(/[^\d]/g, '');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/diagnostico-imoveis
-// Body: multipart/form-data com campo "arquivo" (Excel .xlsx ou .xls)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const arquivo = formData.get('arquivo') as File | null
 
-    if (!arquivo) {
-      return NextResponse.json({ erro: 'Nenhum arquivo enviado.' }, { status: 400 })
-    }
+    if (!arquivo) return NextResponse.json({ erro: 'Nenhum arquivo enviado.' }, { status: 400 })
 
     const action = formData.get('action') as string | null
 
-    // ── INGESTÃO EM REAL-TIME (STREAMING) ──────────────────────────────────
+    // ── INGESTÃO EM REAL-TIME ──────────────────────────────────
     if (action === 'ingest') {
       const arrayBuffer = await arquivo.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
-      
-      // Salvar arquivo temporário para o script Python
-      const tempDir = os.tmpdir()
-      const tempFilePath = path.join(tempDir, `ingest_${Date.now()}_${arquivo.name}`)
+      const tempFilePath = path.join(os.tmpdir(), `ingest_${Date.now()}_${arquivo.name}`)
       fs.writeFileSync(tempFilePath, buffer)
 
       const pythonPath = process.env.PYTHON_PATH || 'python'
       const scriptPath = path.resolve(process.cwd(), '..', 'automation', 'tools', 'etapa1_cadastro_basico.py')
 
-      // Criar entrada de log para acompanhar
       const { data: logEntry } = await supabaseAdmin
         .from('logs_ingestao')
-        .insert({ 
-          arquivo_csv: arquivo.name,
-          total_lidos: 0,
-          motivos_rejeicao: { status: 'manual_dashboard' }
-        })
-        .select()
-        .single()
+        .insert({ arquivo_csv: arquivo.name, total_lidos: 0, motivos_rejeicao: { status: 'manual_dashboard' } })
+        .select().single()
 
       const logId = logEntry?.id ? String(logEntry.id) : '0'
-
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         async start(controller) {
-          const child = spawn(pythonPath, [scriptPath, tempFilePath, logId], {
-            env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
-          })
-
-          child.stdout.on('data', (data) => {
-            controller.enqueue(encoder.encode(data.toString()))
-          })
-
-          child.stderr.on('data', (data) => {
-            // Também enviamos erros para o log de streaming para o usuário ver
-            controller.enqueue(encoder.encode(`ERROR: ${data.toString()}`))
-          })
-
+          const child = spawn(pythonPath, [scriptPath, tempFilePath, logId], { env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+          child.stdout.on('data', (d) => controller.enqueue(encoder.encode(d.toString())))
+          child.stderr.on('data', (d) => controller.enqueue(encoder.encode(`ERROR: ${d.toString()}`)))
           child.on('close', (code) => {
             controller.enqueue(encoder.encode(`\n--- PROCESSO FINALIZADO (SNC: ${code}) ---`))
             controller.close()
-            // Limpar arquivo temporário
             try { fs.unlinkSync(tempFilePath) } catch (e) {}
           })
         }
       })
-
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      })
+      return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } })
     }
 
     // ── 1. Ler o Excel ───────────────────────────────────────────────────────
     const buffer = Buffer.from(await arquivo.arrayBuffer())
     const workbook = XLSX.read(buffer, { type: 'buffer' })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    
-    // Usamos raw: true para pegar valores numéricos sem formatação científica do Excel
-    const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, {
-      defval: '',
-      raw: true, 
-    })
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: true }) as any[]
 
-    if (rows.length === 0) {
-      return NextResponse.json({ erro: 'Planilha vazia ou sem dados reconhecíveis.' }, { status: 400 })
-    }
+    if (rows.length === 0) return NextResponse.json({ erro: 'Planilha vazia.' }, { status: 400 })
 
     const headers = Object.keys(rows[0])
+    const cNumero     = findCol(headers, ['imovel', 'imóvel', 'n°', 'nº', 'numero'])
+    const cUf         = findCol(headers, ['uf', 'estado'])
+    const cCidade     = findCol(headers, ['cidade', 'município'])
+    const cBairro     = findCol(headers, ['bairro'])
+    const cPreco      = findCol(headers, ['preço de venda', 'preco', 'venda'])
+    const cAvaliacao  = findCol(headers, ['avaliação', 'preco_avaliacao'])
+    const cDesconto   = findCol(headers, ['desconto'])
+    const cModalidade = findCol(headers, ['modalidade'])
 
-    // ── 2. Mapear colunas ────────────────────────────────────────────────────
-    const cNumero    = findCol(headers, ['imovel', 'imóvel', 'n°', 'nº', 'numero'])
-    const cUf        = findCol(headers, ['uf', 'estado'])
-    const cCidade    = findCol(headers, ['cidade', 'município', 'municipio'])
-    const cBairro    = findCol(headers, ['bairro'])
-    const cPreco     = findCol(headers, ['preço de venda', 'preco', 'venda'])
-    const cAvaliacao = findCol(headers, ['avaliação', 'avaliacao', 'preço de avaliação'])
-    const cDesconto  = findCol(headers, ['desconto'])
-    const cModalidade= findCol(headers, ['modalidade'])
-    const cFinanc    = findCol(headers, ['financiamento', 'admite financiamento'])
-    const cLink      = findCol(headers, ['link', 'url', 'acesso'])
-    const cTipo      = findCol(headers, ['tipo de imóvel', 'tipo'])
+    // ── 2. Processar e Filtrar ────────────────────────────────────────────────
+    const ufsNoExcel = new Set<string>()
+    const aprovados: any[] = []
+    const rejeitados: any[] = []
+    const resumoRejeicao = { modalidade: 0, desconto: 0, modalidadesEncontradas: {} as Record<string, number> }
 
-    // ── 3. Processar linhas ──────────────────────────────────────────────────
-    const itensMapeados: {
-      numero: string
-      uf: string
-      cidade: string
-      bairro: string
-      preco: number
-      avaliacao: number
-      desconto: number
-      modalidade: string
-      financiamento: boolean
-      tipo: string
-      link: string
-    }[] = []
+    rows.forEach(row => {
+      const numero = normalizeID(row[cNumero || ''])
+      if (!numero) return
 
-    let rejeitados_modalidade = 0
-    let rejeitados_desconto = 0
-    const modalidades_encontradas: Record<string, number> = {}
-
-    for (const row of rows) {
-      // Número do imóvel (Tratar BigInt e Notação Científica)
-      let numero: string | null = null
-      if (cNumero) {
-        const val = row[cNumero]
-        if (typeof val === 'number') {
-          // Garante que números grandes (BigInt) não fiquem em notação científica
-          // 1.5e12 -> "1500000000000"
-          numero = BigInt(Math.floor(val)).toString()
-        } else {
-          const raw = String(val ?? '').trim()
-          // Remove tudo que não for dígito
-          const apenasNumeros = raw.replace(/[^\d]/g, '')
-          if (apenasNumeros.length > 0) numero = apenasNumeros
-        }
-
-        // Fallback para Link se falhar acima
-        if (!numero || numero.length < 5) {
-          const extraido = extrairNumeroFromLink(String(row[cLink ?? ''] ?? ''))
-          if (extraido) numero = String(extraido)
-        }
-      }
-
-      if (!numero) continue;
-
-      const modalidade = String(row[cModalidade ?? ''] ?? '').trim()
-      const desconto_raw = parseBrl(row[cDesconto ?? ''])
-      const desconto = desconto_raw > 0 && desconto_raw < 1 ? desconto_raw * 100 : desconto_raw
-      const preco = parseBrl(row[cPreco ?? ''])
-      const avaliacao = parseBrl(row[cAvaliacao ?? ''])
-
-      // Classificar filtros
-      const modalidade_valida = MODALIDADES_ACEITAS.includes(modalidade.toLowerCase())
-      const desconto_valido = desconto >= DESCONTO_MINIMO
-
-      if (!modalidade_valida) { 
-        rejeitados_modalidade++; 
-        modalidades_encontradas[modalidade] = (modalidades_encontradas[modalidade] || 0) + 1
-      }
-      if (modalidade_valida && !desconto_valido) { rejeitados_desconto++; }
-
-      itensMapeados.push({
+      const uf = String(row[cUf || ''] || '').trim().toUpperCase()
+      const modalidade = String(row[cModalidade || ''] || '').trim()
+      const descontoRaw = parseBrl(row[cDesconto || ''])
+      const desconto = (descontoRaw > 0 && descontoRaw < 1) ? descontoRaw * 100 : descontoRaw
+      
+      const item = {
         numero,
-        uf:        String(row[cUf ?? ''] ?? '').trim().toUpperCase(),
-        cidade:    String(row[cCidade ?? ''] ?? '').trim(),
-        bairro:    String(row[cBairro ?? ''] ?? '').trim(),
-        preco,
-        avaliacao,
+        uf,
+        cidade: String(row[cCidade || ''] || '').trim(),
+        bairro: String(row[cBairro || ''] || '').trim(),
+        preco: parseBrl(row[cPreco || '']),
         desconto,
-        modalidade,
-        financiamento: ['sim', 's', 'true', '1'].includes(String(row[cFinanc ?? ''] ?? '').toLowerCase()),
-        tipo:      String(row[cTipo ?? ''] ?? '').trim(),
-        link:      String(row[cLink ?? ''] ?? '').trim(),
-      })
-    }
-
-    const aprovados = itensMapeados.filter(
-      i => MODALIDADES_ACEITAS.includes(i.modalidade.toLowerCase()) && i.desconto >= DESCONTO_MINIMO
-    )
-    const rejeitados_todos = itensMapeados.filter(
-      i => !MODALIDADES_ACEITAS.includes(i.modalidade.toLowerCase()) || i.desconto < DESCONTO_MINIMO
-    )
-
-    // ── 4. Buscar banco de dados ─────────────────────────────────────────────
-    const numerosAprovados = aprovados.map(i => i.numero)
-    const ufsNoExcel = Array.from(new Set(aprovados.map(i => i.uf)))
-    
-    const PAGE_SIZE = 500
-    const bancoDados: any[] = []
-
-    for (let i = 0; i < numerosAprovados.length; i += PAGE_SIZE) {
-      const chunk = numerosAprovados.slice(i, i + PAGE_SIZE)
-      const { data, error } = await supabaseAdmin
-        .from('imoveis')
-        .select(`
-          imovel_caixa_numero,
-          imovel_caixa_endereco_uf,
-          imovel_caixa_endereco_cidade,
-          imovel_caixa_endereco_bairro,
-          imovel_caixa_post_link_permanente,
-          imovel_caixa_post_titulo,
-          imovel_caixa_post_descricao,
-          imovel_caixa_post_hashtags,
-          imovel_caixa_post_imagem_destaque,
-          imovel_caixa_detalhes_scraping,
-          imovel_caixa_cartorio_matricula,
-          imovel_caixa_endereco_logradouro,
-          id_cep_imovel_caixa,
-          id_grupo_imovel_caixa,
-          imovel_caixa_descricao_tipo,
-          atualizacoes_imovel(
-            imovel_caixa_valor_venda,
-            imovel_caixa_valor_avaliacao,
-            imovel_caixa_valor_desconto_percentual,
-            imovel_caixa_modalidade,
-            imovel_caixa_pagamento_fgts
-          )
-        `)
-        .in('imovel_caixa_numero', chunk)
-
-      if (!error && data) {
-        bancoDados.push(...data)
-      } else if (error) {
-        console.error('[diagnostico-imoveis] Erro Supabase chunk:', error)
-      }
-    }
-
-    console.log(`[diagnostico-imoveis] Total buscado excel: ${numerosAprovados.length}, Total encontrado banco: ${bancoDados.length}`)
-    if (bancoDados.length > 0) {
-      console.log(`[diagnostico-imoveis] Amostra banco:`, bancoDados[0].imovel_caixa_numero)
-    }
-
-    // Montar mapa de BD por número (normalizado para string)
-    const mapaDB = new Map<string, any>()
-    for (const item of bancoDados) {
-      if (item.imovel_caixa_numero) {
-        mapaDB.set(String(item.imovel_caixa_numero), item)
-      }
-    }
-
-    console.log(`[diagnostico-imoveis] MapaDB pronto com ${mapaDB.size} chaves. Ex:`, Array.from(mapaDB.keys()).slice(0, 5))
-
-    // ── 5. Cruzamento ────────────────────────────────────────────────────────
-    const novos: typeof aprovados = []
-    const conformes: (typeof aprovados[0] & { status_seo: string, status_scraping: string, status_cep: string })[] = []
-    const divergentes: (typeof aprovados[0] & { divergencias: string[] })[] = []
-
-    // Contadores de checks dos 7 passos
-    let semSeo = 0, semHashtag = 0, semScraping = 0, semMatricula = 0, semCep = 0, semLocalizacao = 0, semGrupo = 0, semLogradouro = 0, semCapa = 0
-
-    for (const item of aprovados) {
-      const db = mapaDB.get(String(item.numero))
-
-      if (!db) {
-        novos.push(item)
-        continue
+        modalidade
       }
 
-      // Verificações dos 7 passos
-      const temSeo = !!(db.imovel_caixa_post_link_permanente && db.imovel_caixa_post_titulo)
-      const temHashtag = !!(db.imovel_caixa_post_hashtags)
-      const temScraping = !!(db.imovel_caixa_detalhes_scraping)
-      const temMatricula = !!(db.imovel_caixa_cartorio_matricula)
-      const temCep = !!(db.id_cep_imovel_caixa)
-      const temGrupo = !!(db.id_grupo_imovel_caixa)
-      const temLogradouro = !!(db.imovel_caixa_endereco_logradouro)
-      const temCapa = !!(db.imovel_caixa_post_imagem_destaque)
+      if (uf) ufsNoExcel.add(uf)
 
-      if (!temSeo) semSeo++
-      if (!temHashtag) semHashtag++
-      if (!temScraping) semScraping++
-      if (!temMatricula) semMatricula++
-      if (!temCep) semCep++
-      if (!temGrupo) semGrupo++
-      if (!temLogradouro) semLogradouro++
-      if (!temCapa) semCapa++
+      const modValida = MODALIDADES_ACEITAS.includes(modalidade.toLowerCase())
+      const descValido = desconto >= DESCONTO_MINIMO
 
-      // Verificar divergências de valores financeiros
-      const ultimaAtualizacao = db.atualizacoes_imovel?.[0] ?? db.atualizacoes_imovel
-      const divergencias: string[] = []
-
-      if (ultimaAtualizacao) {
-        const precoDb = parseFloat(ultimaAtualizacao.imovel_caixa_valor_venda ?? '0')
-        const avalDb = parseFloat(ultimaAtualizacao.imovel_caixa_valor_avaliacao ?? '0')
-        const descDb = parseFloat(ultimaAtualizacao.imovel_caixa_valor_desconto_percentual ?? '0')
-
-        if (Math.abs(precoDb - item.preco) > 0.01) {
-          divergencias.push(`Valor venda: R$ ${precoDb.toLocaleString('pt-BR')} → R$ ${item.preco.toLocaleString('pt-BR')}`)
-        }
-        if (Math.abs(avalDb - item.avaliacao) > 0.01) {
-          divergencias.push(`Valor avaliação: R$ ${avalDb.toLocaleString('pt-BR')} → R$ ${item.avaliacao.toLocaleString('pt-BR')}`)
-        }
-        if (Math.abs(descDb - item.desconto) > 0.1) {
-          divergencias.push(`Desconto: ${descDb.toFixed(1)}% → ${item.desconto.toFixed(1)}%`)
-        }
+      if (!modValida) {
+        resumoRejeicao.modalidade++
+        resumoRejeicao.modalidadesEncontradas[modalidade] = (resumoRejeicao.modalidadesEncontradas[modalidade] || 0) + 1
+        rejeitados.push(item)
+      } else if (!descValido) {
+        resumoRejeicao.desconto++
+        rejeitados.push(item)
       } else {
-        divergencias.push('Sem registro em atualizacoes_imovel')
+        aprovados.push(item)
       }
-
-      if (divergencias.length > 0) {
-        divergentes.push({ ...item, divergencias })
-      } else {
-        conformes.push({
-          ...item,
-          status_seo: temSeo ? 'ok' : 'ausente',
-          status_scraping: temScraping ? 'ok' : 'ausente',
-          status_cep: temCep ? 'ok' : 'ausente',
-        })
-      }
-    }
-
-    // ── 6. Score dos 7 passos ────────────────────────────────────────────────
-    const totalBanco = bancoDados.length
-    const passos = [
-      { 
-        passo: 1, 
-        nome: 'Filtros & Importação', 
-        finalizado: aprovados.length - novos.length, 
-        processando: novos.length, 
-        total: aprovados.length, 
-        detalhes: novos.length > 0 ? `${novos.length} novos imóveis aguardando gravação.` : 'Todos os imóveis deste lote já estão no banco.' 
-      },
-      { 
-        passo: 2, 
-        nome: 'SEO (slug, título, hashtags)', 
-        finalizado: totalBanco - semSeo - semHashtag, 
-        processando: semSeo + semHashtag, 
-        total: totalBanco, 
-        detalhes: `${semSeo} sem slug/título, ${semHashtag} sem hashtags.` 
-      },
-      { 
-        passo: 3, 
-        nome: 'Resolução Financeira & Grupos', 
-        finalizado: totalBanco - semLocalizacao, 
-        processando: semLocalizacao, 
-        total: totalBanco, 
-        detalhes: `${semLocalizacao} aguardando categorização de grupos.` 
-      },
-      { 
-        passo: 4, 
-        nome: 'Scraping Detalhado (Site Caixa)', 
-        finalizado: totalBanco - semScraping, 
-        processando: semScraping, 
-        total: totalBanco, 
-        detalhes: `${semScraping} aguardando extração de FGTS e Matrícula.` 
-      },
-      { 
-        passo: 5, 
-        nome: 'Matrícula e Cartório', 
-        finalizado: totalBanco - semMatricula, 
-        processando: semMatricula, 
-        total: totalBanco, 
-        detalhes: `${semMatricula} aguardando dados de cartório.` 
-      },
-      { 
-        passo: 6, 
-        nome: 'Enriquecimento de Localização (CEP)', 
-        finalizado: totalBanco - semCep, 
-        processando: semCep, 
-        total: totalBanco, 
-        detalhes: `${semCep} imóveis aguardando processamento de coordenadas e endereço via IA.` 
-      },
-      { 
-        passo: 7, 
-        nome: 'Imagens & Vitrine (Capa)', 
-        finalizado: totalBanco - semCapa, 
-        processando: semCapa, 
-        total: totalBanco, 
-        detalhes: `${semCapa} sem imagem de destaque na vitrine.` 
-      },
-    ].map(p => ({
-      ...p,
-      ok: p.finalizado, 
-      percentual: p.total > 0 ? Math.round((p.finalizado / p.total) * 100) : 0,
-      status: p.finalizado === p.total ? 'ok' : (p.total > 0 && p.finalizado / p.total >= 0.8) ? 'parcial' : 'critico',
-    }))
-
-    // ── 6. Fora de Venda (No banco mas não no Excel para estas UFs) ──────────
-    // Filtrar mapaDB para itens das UFs do Excel que NÃO estão nos aprovados
-    const idsNoExcelSet = new Set(numerosAprovados)
-    const itensForaDeVenda = Array.from(mapaDB.values()).filter(dbItem => {
-      const eDaUf = ufsNoExcel.includes(String(dbItem.imovel_caixa_endereco_uf || '').trim().toUpperCase())
-      const naoEstaNoExcel = !idsNoExcelSet.has(String(dbItem.imovel_caixa_numero))
-      return eDaUf && naoEstaNoExcel
     })
 
-    const { count: totalNoBanco } = await supabaseAdmin
-      .from('imoveis')
-      .select('*', { count: 'exact', head: true })
+    // ── 3. Carregar DB (Apenas para as UFs do Excel) ──────────────────────────
+    let dbItems: any[] = []
+    const ufsArray = Array.from(ufsNoExcel)
+    if (ufsArray.length > 0) {
+      const { data } = await supabaseAdmin
+        .from('imoveis')
+        .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque')
+        .in('imovel_caixa_endereco_uf', ufsArray)
+      if (data) dbItems = data
+    }
+
+    const mapaDB = new Map(dbItems.map(i => [normalizeID(i.imovel_caixa_numero), i]))
+    const numerosAprovados = new Set(aprovados.map(a => a.numero))
+
+    // ── 4. Cruzamento ────────────────────────────────────────────────────────
+    let conformesCount = 0
+    let novosCount = 0
+    const amostraNovos: any[] = []
+
+    aprovados.forEach(item => {
+      if (mapaDB.has(item.numero)) {
+        conformesCount++
+      } else {
+        novosCount++
+        if (amostraNovos.length < 10) amostraNovos.push(item)
+      }
+    })
+
+    // ── 5. Fora de Venda (DB - Aprovados) ────────────────────────────────────
+    const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
+    
+    // ── 6. Diagnóstico dos 7 passos (Média do Banco para as UFs analisadas) ───
+    const totalVendaUf = dbItems.length
+    const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
+    
+    const passos = [
+      { passo: 1, nome: 'Filtros & Importação', finalizado: conformesCount, processando: novosCount, total: aprovados.length },
+      { passo: 2, nome: 'SEO (Slug, Título, Hashtags)', finalizado: checkStep(i => !!(i.imovel_caixa_post_link_permanente && i.imovel_caixa_post_hashtags)), total: totalVendaUf },
+      { passo: 3, nome: 'Resolução Financeira & Grupos', finalizado: checkStep(i => !!i.id_grupo_imovel_caixa), total: totalVendaUf },
+      { passo: 4, nome: 'Scraping Site Caixa', finalizado: checkStep(i => !!i.imovel_caixa_detalhes_scraping), total: totalVendaUf },
+      { passo: 5, nome: 'Matrícula e Cartório', finalizado: checkStep(i => !!i.imovel_caixa_cartorio_matricula), total: totalVendaUf },
+      { passo: 6, nome: 'Localização (CEP)', finalizado: checkStep(i => !!i.id_cep_imovel_caixa), total: totalVendaUf },
+      { passo: 7, nome: 'Imagens & Capa', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalVendaUf },
+    ].map(p => ({
+      ...p,
+      processando: p.total ? (p.total - p.finalizado) : 0,
+      percentual: p.total ? Math.round((p.finalizado / p.total) * 100) : 0,
+      status: (p.total && p.finalizado / p.total >= 0.95) ? 'ok' : 'critico',
+      detalhes: ''
+    }))
 
     const scoreGeral = Math.round(passos.reduce((acc, p) => acc + p.percentual, 0) / passos.length)
 
@@ -455,66 +225,28 @@ export async function POST(request: NextRequest) {
       totalLinhasExcel: rows.length,
       aprovadosFiltros: aprovados.length,
       rejeitadosFiltros: {
-        total: rejeitados_todos.length,
-        modalidade: rejeitados_modalidade,
-        desconto: rejeitados_desconto,
-        modalidadesEncontradas: modalidades_encontradas,
-        amostra: rejeitados_todos.slice(0, 15).map(i => ({
-          numero: i.numero,
-          modalidade: i.modalidade,
-          desconto: `${i.desconto.toFixed(1)}%`,
-          uf: i.uf,
-          cidade: i.cidade,
-          bairro: i.bairro,
-        }))
+        total: rejeitados.length,
+        modalidade: resumoRejeicao.modalidade,
+        desconto: resumoRejeicao.desconto,
+        modalidadesEncontradas: resumoRejeicao.modalidadesEncontradas,
+        amostra: rejeitados.slice(0, 5)
       },
-      novos: {
-        total: novos.length,
-        amostra: novos.slice(0, 20).map(i => ({
-          numero: i.numero,
-          uf: i.uf,
-          cidade: i.cidade,
-          bairro: i.bairro,
-          tipo: i.tipo,
-          preco: i.preco,
-          desconto: `${i.desconto.toFixed(1)}%`,
-        }))
-      },
-      divergentes: {
-        total: divergentes.length,
-        amostra: divergentes.slice(0, 20).map(i => ({
-          numero: i.numero,
-          uf: i.uf,
-          cidade: i.cidade,
-          bairro: i.bairro,
-          divergencias: i.divergencias,
-        }))
-      },
-      conformes: {
-        total: conformes.length,
-      },
-      foraDeVenda: {
-        total: itensForaDeVenda.length,
-        amostra: itensForaDeVenda.slice(0, 20).map(i => ({
-          numero: i.imovel_caixa_numero,
-          uf: i.imovel_caixa_endereco_uf,
-          cidade: i.imovel_caixa_endereco_cidade,
-          bairro: i.imovel_caixa_endereco_bairro,
-          updated_at: i.updated_at
-        }))
-      },
-      passos: passos,
+      novos: { total: novosCount, amostra: amostraNovos },
+      conformes: { total: conformesCount },
+      foraDeVenda: { total: foraDeVendaItens.length, amostra: foraDeVendaItens.slice(0, 5).map(i => ({ numero: i.imovel_caixa_numero, uf: i.imovel_caixa_endereco_uf, cidade: i.imovel_caixa_endereco_cidade })) },
+      divergentes: { total: 0, amostra: [] }, // Reservado para checks de preço divergente depois
+      passos,
       scoreGeral,
-      totalNoBanco: totalNoBanco || 0,
+      totalNoBanco: totalVendaUf,
       debug: {
-        excel_sample: aprovados.slice(0, 10).map(i => i.numero),
-        db_sample: bancoDados.slice(0, 10).map(i => i.imovel_caixa_numero),
-        matched_count: conformes.length + divergentes.length
+        excel_sample: aprovados.slice(0, 3).map(i => i.numero),
+        db_sample: dbItems.slice(0, 3).map(i => normalizeID(i.imovel_caixa_numero)),
+        matched: conformesCount
       }
     })
 
   } catch (err: any) {
-    console.error('[diagnostico-imoveis] Erro:', err)
-    return NextResponse.json({ erro: err.message || 'Erro interno do servidor.' }, { status: 500 })
+    console.error('[API Error]:', err)
+    return NextResponse.json({ erro: err.message }, { status: 500 })
   }
 }

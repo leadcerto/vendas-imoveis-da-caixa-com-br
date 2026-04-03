@@ -90,9 +90,12 @@ def main():
     
     print(f"📊 Total de linhas encontradas: {total_linhas}")
     
-    numeros_processados_set = set()
-    ufs_processadas_set = set()
-    
+    # Contadores para o resumo final
+    count_novos = 0
+    count_conformes = 0
+    count_fora_da_lista = 0
+    count_removidos_120_dias = 0
+
     BATCH_SIZE = 200
     
     for start_idx in range(0, total_linhas, BATCH_SIZE):
@@ -145,16 +148,18 @@ def main():
             res_exis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero").in_("imovel_caixa_numero", lista_numeros).execute()
             existentes = {int(p["imovel_caixa_numero"]): p["imoveis_id"] for p in res_exis.data}
             
-            # Separar novos de existentes
+            # Separar novos de existentes (Smart Match)
             novos_imoveis = [i for i in lote_imoveis if i["imovel_caixa_numero"] not in existentes]
             ids_existentes = [existentes[i["imovel_caixa_numero"]] for i in lote_imoveis if i["imovel_caixa_numero"] in existentes]
+
+            count_novos += len(novos_imoveis)
+            count_conformes += len(ids_existentes)
 
             # Inserir novos (completo)
             if novos_imoveis:
                 supabase.table("imoveis").insert(novos_imoveis).execute()
             
-            # Atualizar existentes (apenas Reset de Etapa se for menor que 2)
-            # Regra Smart Match: se já passou da Etapa 2 (enriquecimento), não reseta para preservar SEO/Scraping
+            # Atualizar existentes (Regra Smart Match: mantém dados básicos, reseta etapa se < 2)
             if ids_existentes:
                 supabase.rpc("reset_etapa_if_needed", {"target_ids": ids_existentes}).execute()
             
@@ -226,34 +231,50 @@ def main():
             print(f"❌ Erro no lote: {e}")
             erros += len(lote_imoveis)
 
-    # 2. Lógica de Limpeza (Sold Properties - 120 dias)
+    # 2. Lógica de Limpeza (Sold Properties / Fora de Venda - 120 dias)
     if ufs_processadas_set:
         print(f"\n🧹 Iniciando verificação de limpeza (Fora de Venda) para UF(s): {ufs_processadas_set}")
         try:
-            # Pegamos todos os imóveis no banco desta UF que NÃO estão nesta lista
+            # Pegamos todos os imóveis no banco desta UF para ver o que sumiu da lista
             res_off = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero, updated_at")\
                 .in_("imovel_caixa_endereco_uf", list(ufs_processadas_set))\
                 .execute()
             
-            fora_da_lista_ids = []
+            ids_para_deletar = []
+            
             for item in res_off.data:
-                if int(item["imovel_caixa_numero"]) not in numeros_processados_set:
-                    # Verificar se a última atualização foi há mais de 120 dias
-                    # Note: idealmente checamos a tabela de histórico, mas updated_at é um bom proxy se não houver upsert agressivo
+                num_db = int(item["imovel_caixa_numero"])
+                if num_db not in numeros_processados_set:
+                    count_fora_da_lista += 1
+                    
+                    # Regra dos 120 dias para deleção automática
                     dt_upd = datetime.datetime.fromisoformat(item["updated_at"].replace("Z", "+00:00"))
                     agora = datetime.datetime.now(datetime.timezone.utc)
                     if (agora - dt_upd).days > 120:
-                        fora_da_lista_ids.append(item["imoveis_id"])
+                        ids_para_deletar.append(item["imoveis_id"])
+                        count_removidos_120_dias += 1
             
-            if fora_da_lista_ids:
-                print(f"🗑️ Removendo {len(fora_da_lista_ids)} imóveis fora de venda (vencidos > 120 dias)...")
-                supabase.table("imoveis").delete().in_("imoveis_id", fora_da_lista_ids).execute()
+            if ids_para_deletar:
+                print(f"🗑️ Removendo {len(ids_para_deletar)} imóveis vendidos/vencidos (> 120 dias)...")
+                supabase.table("imoveis").delete().in_("imoveis_id", ids_para_deletar).execute()
             else:
-                print("✨ Nenhum imóvel elegível para exclusão por tempo (limite 120 dias).")
+                print("✨ Nenhum imóvel elegível para exclusão imediata por tempo (limite 120 dias).")
+
         except Exception as e:
             print(f"⚠️ Erro no processo de limpeza: {e}")
 
-    print(f"\n✅ ETAPA 1 CONCLUÍDA. Sucessos: {sucessos} | Erros: {erros}")
+    # Resumo Final Detalhado
+    print("\n" + "="*50)
+    print("📊 RESUMO DE EXECUÇÃO - ETAPA 1 (Smart Match)")
+    print("="*50)
+    print(f"✅ Novos Cadastrados:      {count_novos}")
+    print(f"🤝 Conformes (em banco):    {count_conformes}")
+    print(f"🏷️  Fora de Venda (Lista):   {count_fora_da_lista}")
+    print(f"🗑️  Auto-Removidos (120d):  {count_removidos_120_dias}")
+    print("-" * 50)
+    print(f"📈 Total Processado:        {sucessos}")
+    print(f"❌ Falhas no Lote:          {erros}")
+    print("="*50)
     print("Step 1/7: OK")
 
 if __name__ == "__main__":

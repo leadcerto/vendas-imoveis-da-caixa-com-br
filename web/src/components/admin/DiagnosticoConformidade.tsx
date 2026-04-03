@@ -410,26 +410,29 @@ export default function DiagnosticoConformidade() {
             </div>
           )}
 
-          {/* Resumo numérico */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="rounded-2xl border p-4 bg-gray-50 border-gray-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Original</p>
+          {/* Resumo numérico (5 cards) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="rounded-2xl border p-4 bg-gray-50 border-gray-100 shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Total no Excel</p>
               <p className="text-xl font-black text-gray-700">{resultado.totalLinhasExcel.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="rounded-2xl border p-4 bg-blue-50 border-blue-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-1">Aprovados</p>
+            <div className="rounded-2xl border p-4 bg-blue-50 border-blue-100 shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-1">Aprovados Filtros</p>
               <p className="text-xl font-black text-blue-700">{resultado.aprovadosFiltros.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="rounded-2xl border p-4 bg-green-50 border-green-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-green-500 mb-1">Conformes</p>
-              <p className="text-xl font-black text-green-700">{resultado.conformes.total.toLocaleString('pt-BR')}</p>
+            <div className="rounded-2xl border p-4 bg-green-50 border-green-100 shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-widest text-green-500 mb-1">Conformes no Banco</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xl font-black text-green-700">{resultado.conformes.total.toLocaleString('pt-BR')}</p>
+                {resultado.conformes.total > 0 && <IoCheckmarkCircleOutline className="text-green-500 animate-bounce" size={16} />}
+              </div>
             </div>
-            <div className="rounded-2xl border p-4 bg-orange-50 border-orange-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-orange-500 mb-1">Novos</p>
+            <div className="rounded-2xl border p-4 bg-orange-50 border-orange-100 shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-widest text-orange-500 mb-1">Novos (Importar)</p>
               <p className="text-xl font-black text-orange-700">{resultado.novos.total.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="rounded-2xl border p-4 bg-red-50 border-red-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">Fora de Venda</p>
+            <div className="rounded-2xl border p-4 bg-red-50 border-red-100 shadow-sm">
+              <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">Fora de Venda (Remover)</p>
               <p className="text-xl font-black text-red-700">{resultado.foraDeVenda.total.toLocaleString('pt-BR')}</p>
             </div>
           </div>
@@ -533,7 +536,7 @@ export default function DiagnosticoConformidade() {
       {/* Rodapé de Versão e Controle de Cache */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Controle de Conformidade v2.0 · Build 2026-04-03-v2
+          Controle de Conformidade v2.1 · Build 2026-04-03-v3
         </p>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>

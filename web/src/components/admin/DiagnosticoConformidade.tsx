@@ -556,7 +556,7 @@ export default function DiagnosticoConformidade() {
       {/* Rodapé de Versão e Controle de Cache */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Controle de Conformidade v2.2.1-FIXED-V8 · Build 2026-04-03
+          Controle de Conformidade v2.2.1-REAL-FINAL · Build 2026-04-03
         </p>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>

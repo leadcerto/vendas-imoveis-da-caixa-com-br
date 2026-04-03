@@ -219,7 +219,8 @@ def main():
             if sucessos % 10 == 0:
                 print(f"⏳ Processados {sucessos}/{len(imoveis)} imóveis scraped...")
                 
-            time.sleep(1) # delay para n bloquear o IP
+            import random
+            time.sleep(random.uniform(2.5, 4.0)) # delay para atingir ~100 acessos em 300s
                 
         except Exception as e:
             print(f"❌ Erro no imóvel {imv.get('imovel_caixa_numero')}: {e}")

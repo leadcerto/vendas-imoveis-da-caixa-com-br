@@ -73,9 +73,12 @@ def main():
             # Application of user's EXACT format rules
             titulo_exato = f"{slug} - Imóveis da CAIXA \U0001f9e1\U0001f499"
             descricao_exata = f"{slug}. Imóvel com desconto de {desconto_moeda}. \u26a0\ufe0f Estamos Online!"
-            palavra_chave_exata = slug
+            palavra_chave_exata = f"{tip} {bai} {cid} {uf}"
             imagem_destaque_exata = f"https://venda.imoveisdacaixa.com.br/imagens/imagem-destaque/{slug}.jpg"
             hashtags = get_hashtags(uf, cid, bai, tip)
+
+            tag_alt = f"{tip} em {bai}, {cid} - {uf}"
+            tag_title = f"{tip} com Desconto de {desconto_moeda}"
 
             lote_imoveis_update.append({
                 "imoveis_id": iid,
@@ -83,6 +86,8 @@ def main():
                 "imovel_caixa_post_titulo": titulo_exato,
                 "imovel_caixa_post_descricao": descricao_exata,
                 "imovel_caixa_post_palavra_chave": palavra_chave_exata,
+                "imovel_caixa_post_imagem_destaque_tag_alt": tag_alt,
+                "imovel_caixa_post_imagem_destaque_tag_title": tag_title,
                 "imovel_caixa_post_hashtags": hashtags,
                 "imovel_caixa_post_imagem_destaque": imagem_destaque_exata
             })

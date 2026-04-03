@@ -1,0 +1,26 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   automation/tools/etapa1_cadastro_basico.py
+	modified:   automation/tools/etapa2_seo_grupos.py
+	modified:   automation/tools/etapa3_scraping.py
+	modified:   automation/tools/worker_etapas.py
+	modified:   web/next.config.ts
+	modified:   web/src/components/PropertyDetailsClient.tsx
+	modified:   web/src/components/admin/CSVUpload.tsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	automation/tools/__pycache__/etapa2_seo_grupos.cpython-313.pyc
+	automation/tools/fix_seo_data.py
+	automation/tools/test_import.xlsx
+	automation/tools/test_seo.txt
+	automation/tools/wipe_db.py
+	out.txt
+	status.txt
+	web/public/imagens/
+
+no changes added to commit (use "git add" and/or "git commit -a")

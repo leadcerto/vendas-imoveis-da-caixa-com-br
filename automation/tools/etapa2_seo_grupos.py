@@ -19,10 +19,22 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def normalize_text(text):
+def normalize_text(text, keep_case=False):
     if not text: return ""
-    nfd_form = unicodedata.normalize('NFD', str(text).strip().lower())
+    text_str = str(text).strip()
+    if not keep_case:
+        text_str = text_str.lower()
+    nfd_form = unicodedata.normalize('NFD', text_str)
     return "".join(c for c in nfd_form if unicodedata.category(c) != 'Mn')
+
+def format_money_abbrev(val):
+    """Formata valor para o Title (H1) visando o limite de 60 caracteres: ex R$ 108 Mil."""
+    val = float(val or 0)
+    if val >= 1_000_000:
+        return f"R$ {val/1_000_000:.1f} Mi".replace(".", ",")
+    if val >= 1_000:
+        return f"R$ {int(val/1_000)} Mil"
+    return f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def generate_slug(uf, cidade, bairro, tipo, numero):
     parts = [uf, cidade, bairro, tipo, str(numero)]
@@ -36,6 +48,7 @@ def get_hashtags(uf, cidade, bairro, tipo):
     bairro_n = normalize_text(bairro).replace(" ", "")
     uf_n = normalize_text(uf).replace(" ", "")
     
+    # Categorias Oficiais (Conforme Passo 02 do documento)
     cat1 = ["#imoveiscaixa", "#imoveis_da_caixa", "#imoveis_leilao", "#LeilaoDeImoveis", "#ImoveisDeLeilao", "#ImovelRetomado", "#ImoveisAdjudicados", "#OportunidadeDeLeilao", "#LeilaoCaixa", "#imovel_barato"]
     cat2 = [f"#{tipo_n}{cidade_n}", f"#{tipo_n}{bairro_n}", f"#{tipo_n}{uf_n}"]
     cat3 = ["#OportunidadeImobiliaria", "#AbaixoDoPreco", "#ImovelComDesconto", "#PrecoDeCusto", "#OportunidadeUnica", "#PrecoDeOcasiao", "#NegocioImperdivel"]
@@ -45,24 +58,12 @@ def get_hashtags(uf, cidade, bairro, tipo):
     
     selected = []
     
-    # Check lengths before sampling to avoid ValueError
-    if len(cat1) >= 2: selected.extend(random.sample(cat1, 2))
-    else: selected.extend(cat1)
-
-    if len(cat2) >= 2: selected.extend(random.sample(cat2, 2))
-    else: selected.extend(cat2)
-
-    if len(cat3) >= 2: selected.extend(random.sample(cat3, 2))
-    else: selected.extend(cat3)
-
-    if len(cat4) >= 2: selected.extend(random.sample(cat4, 2))
-    else: selected.extend(cat4)
-
-    if len(cat5) >= 1: selected.extend(random.sample(cat5, 1))
-    else: selected.extend(cat5)
-
-    if len(cat6) >= 1: selected.extend(random.sample(cat6, 1))
-    else: selected.extend(cat6)
+    # Distribuição Exata: 2 das cats 1,2,3,4 | 1 das cats 5,6
+    for cat, count in [(cat1, 2), (cat2, 2), (cat3, 2), (cat4, 2), (cat5, 1), (cat6, 1)]:
+        if len(cat) >= count:
+            selected.extend(random.sample(cat, count))
+        else:
+            selected.extend(cat)
 
     return " ".join(selected)
 
@@ -119,24 +120,34 @@ def main():
             "id, imovel_id, imovel_caixa_valor_venda, imovel_caixa_valor_avaliacao"
         ).in_("imovel_id", imoveis_ids).execute()
         
-        # Mapear finan por imovel_id (pegar a mais recente se houver duplicatas no batch)
+        # Mapear finan por imovel_id (usar string para evitar erro de tipo na chave)
         finan_map = {}
         for f in resp_finan.data:
-            finan_map[f["imovel_id"]] = f
+            fid_map = str(f["imovel_id"])
+            finan_map[fid_map] = f
 
         lote_imoveis_update = []
         lote_finan_update = []
         
-        for imv in imoveis:
-            iid = imv["imoveis_id"]
+        for idx, imv in enumerate(imoveis):
+            iid = str(imv["imoveis_id"]) # Garantir string para match com finan_map
             num = imv["imovel_caixa_numero"]
             uf, cid, bai, tip = imv.get("imovel_caixa_endereco_uf",""), imv.get("imovel_caixa_endereco_cidade",""), imv.get("imovel_caixa_endereco_bairro",""), imv.get("imovel_caixa_descricao_tipo","")
             
+            # Resetar valores financeiros para cada imóvel
+            val_venda, val_aval = 0.0, 0.0
             f_data = finan_map.get(iid)
             grupo_id = None
+            
             if f_data:
-                val_venda = float(f_data.get("imovel_caixa_valor_venda", 0))
-                val_aval = float(f_data.get("imovel_caixa_valor_avaliacao", 0))
+                try:
+                    val_venda = float(f_data.get("imovel_caixa_valor_venda") or 0)
+                    val_aval = float(f_data.get("imovel_caixa_valor_avaliacao") or 0)
+                except:
+                    pass
+            
+            if (idx + 1) % 50 == 0:
+                print(f"   ⚙️ Processando {idx+1}/{len(imoveis)} do lote atual...")
                 
                 # Calcular Grupo
                 ent_p, pre_p = 0.0, 0.0
@@ -155,25 +166,41 @@ def main():
             # SEO
             slug = generate_slug(uf, cid, bai, tip, num)
             
-            # Formatação Exata Solicitada
-            # Desconto precisa estar formatado em Reais (BRL)
+            # SEO TITLE (H1) - Nova Regra max 60 chars
+            # Formato: [Tipo] em [Bairro], [Cidade]/[UF] | Desconto de [Valor]
             val_desconto = max(0.0, val_aval - val_venda) if f_data else 0.0
-            desconto_moeda = f"R$ {val_desconto:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            desconto_abreviado = format_money_abbrev(val_desconto)
             
-            titulo_exato = f"{slug} - Imóveis da CAIXA 🧡💙"
-            descricao_exata = f"{slug}. Imóvel com desconto de {desconto_moeda}. ⚠️ Estamos Online!"
-            palavra_chave_exata = slug
+            # Garantir que Tipo comece em Maiúsculo
+            tipo_fmt = str(tip or "Imóvel").capitalize()
+            
+            titulo_h1 = f"{tipo_fmt} em {bai}, {cid}/{uf} | Desconto de {desconto_abreviado}"
+            
+            # Se ainda exceder 60 caracteres, tentamos encurtar removendo o bairro (fallback) ou truncando
+            if len(titulo_h1) > 60:
+                titulo_h1 = f"{tipo_fmt} em {cid}/{uf} | Desconto de {desconto_abreviado}"
+            
+            # SEO Metadata Readable (Passo 02 do documento)
+            desc_completa = f"{uf} {cid} {bai} {tip} {num}. Imóvel com desconto de {format_money_abbrev(val_desconto)}. ⚠️ Estamos Online!"
+            palavra_chave = f"{tip} {bai} {cid} {uf}"
+            
             imagem_destaque_exata = f"https://venda.imoveisdacaixa.com.br/imagens/imagem-destaque/{slug}.jpg"
             
             # Fazer upload físico para o Storage como o usuário pediu
             upload_imagem_destaque_to_storage(slug, master_image_bytes)
             
+            # Image SEO Tags
+            tag_alt = f"{tip} em {bai}, {cid} - {uf}"
+            tag_title = f"{tip} com Desconto de {desconto_abreviado}"
+            
             lote_imoveis_update.append({
                 "imoveis_id": iid,
                 "imovel_caixa_post_link_permanente": slug,
-                "imovel_caixa_post_titulo": titulo_exato,
-                "imovel_caixa_post_descricao": descricao_exata,
-                "imovel_caixa_post_palavra_chave": palavra_chave_exata,
+                "imovel_caixa_post_titulo": titulo_h1,
+                "imovel_caixa_post_descricao": desc_completa[:160], # Limite meta desc
+                "imovel_caixa_post_palavra_chave": palavra_chave,
+                "imovel_caixa_post_imagem_destaque_tag_alt": tag_alt,
+                "imovel_caixa_post_imagem_destaque_tag_title": tag_title,
                 "imovel_caixa_post_hashtags": get_hashtags(uf, cid, bai, tip),
                 "imovel_caixa_post_imagem_destaque": imagem_destaque_exata,
                 "id_grupo_imovel_caixa": grupo_id,

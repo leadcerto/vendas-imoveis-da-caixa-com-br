@@ -166,22 +166,41 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                 <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Palavra-Chave</p>
                 <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">{property.imovel_caixa_post_palavra_chave}</p>
               </div>
-              <div className="space-y-1 lg:col-span-1">
-                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Imagem Destaque (Square)</p>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag ALT da Imagem</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
+                  {property.imovel_caixa_post_imagem_destaque_tag_alt}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Tag Title da Imagem</p>
+                <p className="text-[11px] font-bold text-gray-600 break-words bg-white p-2 rounded-lg border border-gray-100 italic leading-relaxed">
+                  {property.imovel_caixa_post_imagem_destaque_tag_title}
+                </p>
+              </div>
+              <div className="space-y-1 lg:col-span-2">
+                <p className="text-[9px] font-black text-[#005CA9] uppercase tracking-tighter">Destaque SEO (Square)</p>
                 <div className="space-y-2">
                   <p className="text-[11px] font-bold text-gray-600 break-all bg-white p-2 rounded-lg border border-gray-100 italic lowercase leading-relaxed">
                     {property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
                   </p>
-                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">
+                  <figure className="relative w-full max-w-[250px] aspect-square rounded-2xl overflow-hidden border-2 border-gray-200 bg-white shadow-md">
                      <img 
                        src={property.imovel_caixa_post_imagem_destaque || getLocalImagePath(property)}
-                       alt="Preview Destaque"
+                       alt={property.imovel_caixa_post_imagem_destaque_tag_alt}
+                       title={property.imovel_caixa_post_imagem_destaque_tag_title}
+                       loading="lazy"
+                       width="250"
+                       height="250"
                        className="w-full h-full object-cover"
                        onError={(e) => {
                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/f37021/white?text=Imagem+Padrao';
                        }}
                      />
-                  </div>
+                     <figcaption className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] font-black uppercase py-1 text-center backdrop-blur-sm">
+                       "Imóvel Caixa disponível para venda"
+                     </figcaption>
+                  </figure>
                 </div>
               </div>
             </div>

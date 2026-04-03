@@ -280,7 +280,16 @@ export async function POST(request: NextRequest) {
         `)
         .in('imovel_caixa_numero', chunk)
 
-      if (!error && data) bancoDados.push(...data)
+      if (!error && data) {
+        bancoDados.push(...data)
+      } else if (error) {
+        console.error('[diagnostico-imoveis] Erro Supabase chunk:', error)
+      }
+    }
+
+    console.log(`[diagnostico-imoveis] Total buscado excel: ${numerosAprovados.length}, Total encontrado banco: ${bancoDados.length}`)
+    if (bancoDados.length > 0) {
+      console.log(`[diagnostico-imoveis] Amostra banco:`, bancoDados[0].imovel_caixa_numero)
     }
 
     // Montar mapa de BD por número (normalizado para string)
@@ -301,6 +310,7 @@ export async function POST(request: NextRequest) {
       const db = mapaDB.get(item.numero)
 
       if (!db) {
+        // Se não achou, tentar converter item.numero (que veio do excel) denovo ou logar
         novos.push(item)
         continue
       }

@@ -453,35 +453,7 @@ export default function DiagnosticoConformidade() {
 
           {/* Seções expansíveis */}
           <div className="space-y-3">
-            <SecaoAmostra
-              titulo="RESUMO DA IMPORTAÇÃO:"
-              total={resultado.novos.total}
-              color="border-purple-200 bg-purple-50/10 text-purple-700"
-              icon={IoInformationCircleOutline}
-              itens={resultado.novos.amostra}
-              renderItem={(item, i) => (
-                <div key={i} className="text-xs p-3 bg-white rounded-xl border border-purple-100 flex justify-between gap-2 shadow-sm">
-                  <span className="font-black text-[#003870]">#{item.numero}</span>
-                  <span className="text-gray-500 truncate">{item.bairro} · {item.cidade}/{item.uf}</span>
-                  <span className="font-bold text-purple-600 shrink-0">{item.desconto}</span>
-                </div>
-              )}
-            >
-              <div className="px-4 py-4 mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-purple-100 bg-purple-50/20">
-                <div className="p-4 rounded-2xl bg-white border border-purple-100">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Novos Cadastros:</p>
-                  <p className="text-xl font-black text-purple-600">{resultado.novos.total.toLocaleString('pt-BR')}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-white border border-purple-100">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Imóveis Atualizados:</p>
-                  <p className="text-xl font-black text-blue-600">{(resultado.conformes.total + resultado.divergentes.total).toLocaleString('pt-BR')}</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-white border border-purple-100">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Imóveis sem Atualização:</p>
-                  <p className="text-xl font-black text-gray-400">{(resultado.totalNoBanco - (resultado.conformes.total + resultado.divergentes.total)).toLocaleString('pt-BR')}</p>
-                </div>
-              </div>
-            </SecaoAmostra>
+
 
             <SecaoAmostra
               titulo="Com Divergências de Valores"

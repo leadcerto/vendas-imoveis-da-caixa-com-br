@@ -235,44 +235,36 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
           <h2 className="sr-only">Imagem</h2>
           <figure className="relative w-full h-[300px] md:h-[500px] overflow-hidden rounded-[40px] shadow-2xl bg-white flex items-center justify-center">
              <img 
-               src={getCorrectedCaixaUrl(property.property_number)}
+               src={property.imovel_caixa_link_imagem || property.url_imagem || getCorrectedCaixaUrl(property.property_number)}
                alt={property.imovel_caixa_post_imagem_destaque_tag_alt}
                title={property.imovel_caixa_post_imagem_destaque_tag_title}
                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
                onError={(e) => {
                  const target = e.target as HTMLImageElement;
                  const currentSrc = target.src;
-                 
-                 const correctedCaixa = getCorrectedCaixaUrl(property.property_number);
                  const localPath = getLocalImagePath(property);
                  const originalCaixa = property.imovel_caixa_link_imagem;
+                 const placeholder = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1073&auto=format&fit=crop';
                  
-                 if (currentSrc === correctedCaixa) {
+                 if (currentSrc !== localPath && localPath) {
                    target.src = localPath;
-                 } else if (currentSrc.includes('/imagens-destaque/') && originalCaixa && originalCaixa !== correctedCaixa) {
+                 } else if (currentSrc !== originalCaixa && originalCaixa) {
                    target.src = originalCaixa;
-                 } else {
-                   target.style.display = 'none';
-                   const parent = target.parentElement;
-                   if (parent) {
-                     const figcap = parent.querySelector('figcaption');
-                     if (figcap) (figcap as HTMLElement).style.display = 'none';
-                     const fallbackIcon = parent.querySelector('.fallback-icon');
-                     if (fallbackIcon) (fallbackIcon as HTMLElement).style.display = 'flex';
-                   }
+                 } else if (currentSrc !== placeholder) {
+                   target.src = placeholder;
                  }
                }}
              />
-             <figcaption className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-black uppercase py-3 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-500">
+             <figcaption className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-black uppercase py-3 text-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-500">
                "Imóvel Caixa disponível para venda"
              </figcaption>
-             <div className="fallback-icon hidden w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 flex-col items-center justify-center p-12 text-center">
-               <IoHomeOutline size={80} className="text-gray-300 mb-6" />
-               <h3 className="text-3xl font-black text-gray-400 uppercase tracking-tighter max-w-xl">
-                 {property.imovel_caixa_post_titulo}
-               </h3>
-             </div>
           </figure>
+          <div className="absolute top-8 right-8 z-20">
+            <div className="px-6 py-3 bg-[#005CA9] text-white text-[10px] font-black rounded-2xl flex items-center gap-2 shadow-2xl shadow-[#005CA9]/30 uppercase tracking-widest border border-white/20">
+               <div className="w-1.5 h-1.5 bg-[#F9B200] rounded-full animate-bounce"></div>
+               Imagem Oficial CAIXA
+            </div>
+          </div>
         </section>
 
         {/* BLOCO 3: VALORES (H2) - ⭐DESTAQUE MÁXIMO⭐ */}

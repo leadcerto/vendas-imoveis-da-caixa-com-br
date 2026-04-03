@@ -506,6 +506,26 @@ export default function DiagnosticoConformidade() {
                 </div>
               )}
             />
+
+            <SecaoAmostra
+              titulo="Fora de Venda (Sumiram da Lista)"
+              total={resultado.foraDeVenda.total}
+              color="border-gray-200 bg-gray-50/50 text-gray-700"
+              icon={IoInformationCircleOutline}
+              itens={resultado.foraDeVenda.amostra}
+              renderItem={(item, i) => (
+                <div key={i} className="text-xs p-3 bg-white rounded-xl border border-gray-100 flex justify-between gap-2">
+                  <span className="font-black text-[#003870]">#{item.numero}</span>
+                  <span className="text-gray-500">{item.cidade}/{item.uf}</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Pendente Remoção</span>
+                </div>
+              )}
+            >
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-[10px] text-blue-700 font-bold">
+                 ℹ️ Estes imóveis estão no seu banco de dados mas NÃO constam nesta nova lista da CAIXA. 
+                 Se eles permanecerem ausentes por mais de 120 dias, o sistema os removerá automaticamente.
+              </div>
+            </SecaoAmostra>
           </div>
 
           {/* Novos Detalhes de Modalidades Encontradas */}
@@ -536,7 +556,7 @@ export default function DiagnosticoConformidade() {
       {/* Rodapé de Versão e Controle de Cache */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Controle de Conformidade v2.1 · Build 2026-04-03-v4
+          Controle de Conformidade v2.2 · Build 2026-04-03-v5
         </p>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>

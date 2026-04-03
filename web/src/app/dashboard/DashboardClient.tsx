@@ -69,6 +69,24 @@ export default function DashboardClient() {
       }
     };
 
+    const clearCacheAndSW = async () => {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+          console.log('Service Worker unregistered');
+        }
+      }
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          await caches.delete(name);
+          console.log('Cache deleted:', name);
+        }
+      }
+    };
+
+    clearCacheAndSW();
     fetchDashboardData();
   }, []);
 

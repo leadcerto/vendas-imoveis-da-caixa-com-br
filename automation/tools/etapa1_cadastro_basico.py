@@ -45,6 +45,7 @@ def main():
         sys.exit(1)
         
     excel_path = sys.argv[1]
+    log_id = sys.argv[2] if len(sys.argv) > 2 else None
     
     if not os.path.exists(excel_path):
         print(f"❌ ERRO: Arquivo não encontrado - {excel_path}")
@@ -67,6 +68,18 @@ def main():
 
     try:
         df = pd.read_excel(excel_path)
+        
+        # Tentar capturar a data da lista (CAIXA) para o log
+        if log_id:
+            try:
+                # Pega a primeira data não nula que encontrar no lote
+                data_exemplo = df['imovel_caixa_data_criacao'].dropna().iloc[0]
+                dt_obj = pd.to_datetime(data_exemplo)
+                data_formatada = dt_obj.strftime('%Y-%m-%d')
+                supabase.table("logs_ingestao").update({"data_lista": data_formatada}).eq("id", log_id).execute()
+                print(f"✅ Data da lista registrada no log: {data_formatada}")
+            except Exception as e:
+                print(f"⚠️ Não foi possível extrair a data da lista para o log: {e}")
     except Exception as e:
         print(f"❌ Erro ao ler Excel: {e}")
         sys.exit(1)
@@ -96,7 +109,8 @@ def main():
                 id_uf = estados_map.get(clean_name(uf_raw))
                 id_cidade = cidades_map.get((clean_name(cidade_raw), id_uf)) if id_uf else None
                 
-                lote_imoveis.append({
+                # Campos para o cadastro do imóvel
+                imovel_data = {
                     "imovel_caixa_numero": numero_imovel,
                     "imovel_caixa_endereco_uf": uf_raw,
                     "imovel_caixa_endereco_cidade": cidade_raw,
@@ -110,8 +124,9 @@ def main():
                     "id_uf_imovel_caixa": id_uf,
                     "id_cidade_imovel_caixa": id_cidade,
                     "etapa_processamento": 1
-                })
+                }
                 
+                lote_imoveis.append(imovel_data)
                 lote_financeiro_raw.append(row)
             except Exception as e:
                 erros += 1
@@ -119,20 +134,69 @@ def main():
         if not lote_imoveis: continue
             
         try:
-            # Upsert
-            resp_imoveis = supabase.table("imoveis").upsert(lote_imoveis, on_conflict="imovel_caixa_numero").execute()
-            numero_to_id = {item["imovel_caixa_numero"]: item["imoveis_id"] for item in resp_imoveis.data}
+            # 1. Identificar quais imóveis já existem para fazer o "Smart Upsert"
+            lista_numeros = [item["imovel_caixa_numero"] for item in lote_imoveis]
+            res_exis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero").in_("imovel_caixa_numero", lista_numeros).execute()
+            existentes = {int(p["imovel_caixa_numero"]): p["imoveis_id"] for p in res_exis.data}
             
-            # Financeiro (sempre insert de nova atualização)
+            # Separar novos de existentes
+            novos_imoveis = [i for i in lote_imoveis if i["imovel_caixa_numero"] not in existentes]
+            ids_existentes = [existentes[i["imovel_caixa_numero"]] for i in lote_imoveis if i["imovel_caixa_numero"] in existentes]
+
+            # Inserir novos (completo)
+            if novos_imoveis:
+                supabase.table("imoveis").insert(novos_imoveis).execute()
+            
+            # Atualizar existentes (apenas Reset de Etapa)
+            if ids_existentes:
+                supabase.table("imoveis").update({"etapa_processamento": 1}).in_("imoveis_id", ids_existentes).execute()
+            
+            # Recarregar IDs para o financeiro
+            res_all = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero").in_("imovel_caixa_numero", lista_numeros).execute()
+            numero_to_id = {int(p["imovel_caixa_numero"]): p["imoveis_id"] for p in res_all.data}
+
+            # Financeiro (Prevenção de duplicatas idênticas no mesmo processamento/hora)
             lote_atualizacoes = []
+            
+            # Consultar últimos registros de atualização para evitar duplicidade em curto prazo
+            res_hist = supabase.table("atualizacoes_imovel").select("imovel_id, created_at")\
+                .in_("imovel_id", list(numero_to_id.values()))\
+                .order("created_at", desc=True).execute()
+            
+            # Mapa do último 'created_at' por imóvel
+            ultimas_atualizacoes = {}
+            for h in res_hist.data:
+                if h["imovel_id"] not in ultimas_atualizacoes:
+                    ultimas_atualizacoes[h["imovel_id"]] = h["created_at"]
+
+            agora_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
             for row in lote_financeiro_raw:
                 num = int(row.get('imovel_caixa_numero', 0))
                 imoveis_id = numero_to_id.get(num)
                 if not imoveis_id: continue
                 
+                # Regra: Se já houve uma atualização nas últimas 2 horas, não insere novamente para o mesmo batch
+                ultima_data_str = ultimas_atualizacoes.get(imoveis_id)
+                if ultima_data_str:
+                    try:
+                        ultima_dt = datetime.datetime.fromisoformat(ultima_data_str.replace("Z", "+00:00"))
+                        agora_dt = datetime.datetime.now(datetime.timezone.utc)
+                        delta = agora_dt - ultima_dt
+                        if delta.total_seconds() < 7200: # 2 horas de janela para o mesmo batch
+                            continue
+                    except: pass
+
                 data_criacao = row.get('imovel_caixa_data_criacao')
-                if pd.isna(data_criacao): data_criacao = datetime.datetime.now().isoformat()
-                else: data_criacao = str(data_criacao)
+                if pd.isna(data_criacao): 
+                    data_criacao = agora_iso
+                else: 
+                    # Forçar formato ISO para evitar erro de fuso no frontend
+                    try:
+                        dt_obj = pd.to_datetime(data_criacao)
+                        data_criacao = dt_obj.strftime('%Y-%m-%d 12:00:00+00') # Meio-dia UTC para não pular dia no BR
+                    except:
+                        data_criacao = str(data_criacao)
                 
                 lote_atualizacoes.append({
                     "imovel_id": imoveis_id,
@@ -156,10 +220,7 @@ def main():
             erros += len(lote_imoveis)
 
     print(f"\n✅ ETAPA 1 CONCLUÍDA. Sucessos: {sucessos} | Erros: {erros}")
-
-if __name__ == "__main__":
-    main()
-
+    print("Step 1/7: OK")
 
 if __name__ == "__main__":
     main()

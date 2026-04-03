@@ -1148,7 +1148,18 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                 <tbody className="divide-y divide-gray-50">
                   {history?.map((h: any, i: number) => (
                     <tr key={i} className="hover:bg-gray-50/30 transition-colors group">
-                      <td className="px-10 py-8 text-sm font-bold text-gray-500">{new Date(h.date_update).toLocaleDateString('pt-BR')}</td>
+                      <td className="px-10 py-8 text-sm font-bold text-gray-500">
+                        {h.date_update ? (
+                          (() => {
+                            const isoPart = String(h.date_update).match(/(\d{4})-(\d{2})-(\d{2})/);
+                            if (isoPart) {
+                              const [_, y, m, d] = isoPart;
+                              return `${d}/${m}/${y}`;
+                            }
+                            return '---';
+                          })()
+                        ) : '---'}
+                      </td>
                       <td className="px-10 py-8">
                          <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>

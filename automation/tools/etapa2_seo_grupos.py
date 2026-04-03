@@ -146,9 +146,20 @@ def main():
                 except:
                     pass
             
-            if (idx + 1) % 50 == 0:
-                print(f"   ⚙️ Processando {idx+1}/{len(imoveis)} do lote atual...")
+            if f_data:
+                # Log a cada 50 imóveis para acompanhar progresso
+                if (idx + 1) % 50 == 0:
+                    print(f"   ⚙️ Processando financeiros {idx+1}/{len(imoveis)} do lote...")
+
+                val_desconto = max(0.0, val_aval - val_venda)
+                desconto_perc = (val_desconto / val_aval * 100) if val_aval > 0 else 0
                 
+                # Selo de Oportunidade (Baseado no desconto do modelo V3)
+                if desconto_perc >= 80: selo_id = 1    # Ouro
+                elif desconto_perc >= 60: selo_id = 2  # Prata
+                elif desconto_perc >= 50: selo_id = 3  # Bronze
+                else: selo_id = 4                    # Destaque
+
                 # Calcular Grupo
                 ent_p, pre_p = 0.0, 0.0
                 for grp in grupos:
@@ -160,7 +171,9 @@ def main():
                     "id": f_data["id"],
                     "imovel_caixa_pagamento_financiamento_entrada": val_venda * ent_p,
                     "imovel_caixa_pagamento_financiamento_prestacao": val_venda * pre_p,
-                    "imovel_caixa_valor_desconto_moeda": max(0.0, val_aval - val_venda)
+                    "imovel_caixa_valor_desconto_moeda": val_desconto,
+                    "imovel_caixa_valor_desconto_percentual": round(desconto_perc, 2),
+                    "imovel_selo_oportunidade_id": selo_id
                 })
 
             # SEO

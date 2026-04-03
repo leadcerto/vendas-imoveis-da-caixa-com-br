@@ -100,11 +100,14 @@ def process_new_uploads():
             supabase.table("logs_ingestao").update({"total_lidos": -1}).eq("id", log_id).execute()
             return False
 
+        # Marca como em processamento ANTES de começar para evitar que o próximo ciclo (60s) pegue o mesmo id
+        supabase.table("logs_ingestao").update({"total_lidos": 1}).eq("id", log_id).execute()
+
         local_file = download_file(storage_path)
         if local_file:
-            success1, out1 = run_script_sync(SCRIPTS["etapa1"], [local_file])
+            success1, out1 = run_script_sync(SCRIPTS["etapa1"], [local_file, str(log_id)])
             if success1:
-                # Update status para indicar que Etapa 1 passou (9000 para RJ)
+                # Update status final (9000 para indicar conclusão da Etapa 1)
                 supabase.table("logs_ingestao").update({"total_lidos": 9000, "total_aceitos": 9000}).eq("id", log_id).execute()
                 run_script_sync(SCRIPTS["etapa2"])
                 try: os.remove(local_file)

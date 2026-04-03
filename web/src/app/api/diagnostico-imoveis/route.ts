@@ -77,12 +77,25 @@ export async function POST(request: NextRequest) {
       fs.writeFileSync(tempFilePath, buffer)
 
       const pythonPath = process.env.PYTHON_PATH || 'python'
-      const scriptPath = path.resolve(process.cwd(), '..', 'automation', 'tools', 'ingest_caixa_csv.py')
+      const scriptPath = path.resolve(process.cwd(), '..', 'automation', 'tools', 'etapa1_cadastro_basico.py')
+
+      // Criar entrada de log para acompanhar
+      const { data: logEntry } = await supabaseAdmin
+        .from('logs_ingestao')
+        .insert({ 
+          arquivo_csv: arquivo.name,
+          total_lidos: 0,
+          motivos_rejeicao: { status: 'manual_dashboard' }
+        })
+        .select()
+        .single()
+
+      const logId = logEntry?.id ? String(logEntry.id) : '0'
 
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         async start(controller) {
-          const child = spawn(pythonPath, [scriptPath, '--file', tempFilePath, '--yes'], {
+          const child = spawn(pythonPath, [scriptPath, tempFilePath, logId], {
             env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
           })
 
@@ -117,9 +130,11 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await arquivo.arrayBuffer())
     const workbook = XLSX.read(buffer, { type: 'buffer' })
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
+    
+    // Usamos raw: true para pegar valores numéricos sem formatação científica do Excel
     const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, {
       defval: '',
-      raw: false, // todos como string para preservar formatação
+      raw: true, 
     })
 
     if (rows.length === 0) {
@@ -161,17 +176,23 @@ export async function POST(request: NextRequest) {
     const modalidades_encontradas: Record<string, number> = {}
 
     for (const row of rows) {
-      // Número do imóvel
+      // Número do imóvel (Tratar BigInt e Notação Científica)
       let numero: string | null = null
       if (cNumero) {
-        const raw = String(row[cNumero] ?? '').trim()
-        // Limpeza robusta: manter apenas dígitos
-        const apenasNumeros = raw.replace(/[^\d]/g, '')
-        
-        if (apenasNumeros.length > 0) {
-          numero = apenasNumeros
-        } else if (raw.toUpperCase().includes('E+') || raw.includes(',')) {
-          // Tentar extrair do link se o número estiver corrompido
+        const val = row[cNumero]
+        if (typeof val === 'number') {
+          // Garante que números grandes (BigInt) não fiquem em notação científica
+          // 1.5e12 -> "1500000000000"
+          numero = BigInt(Math.floor(val)).toString()
+        } else {
+          const raw = String(val ?? '').trim()
+          // Remove tudo que não for dígito
+          const apenasNumeros = raw.replace(/[^\d]/g, '')
+          if (apenasNumeros.length > 0) numero = apenasNumeros
+        }
+
+        // Fallback para Link se falhar acima
+        if (!numero || numero.length < 5) {
           const extraido = extrairNumeroFromLink(String(row[cLink ?? ''] ?? ''))
           if (extraido) numero = String(extraido)
         }

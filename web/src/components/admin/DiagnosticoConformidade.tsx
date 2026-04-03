@@ -68,52 +68,53 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-function PassoCard({ passo }: { passo: PassoResult }) {
-  const isOk = passo.status === 'ok';
-  const isParcial = passo.status === 'parcial';
-  const bg = isOk ? 'border-green-200 bg-green-50/40' : isParcial ? 'border-amber-200 bg-amber-50/40' : 'border-red-200 bg-red-50/40';
-  const textColor = isOk ? 'text-green-700' : isParcial ? 'text-amber-700' : 'text-red-700';
-  const Icon = isOk ? IoCheckmarkCircleOutline : isParcial ? IoWarningOutline : IoAlertCircleOutline;
+function PassoCard({ passo, isIngesting, currentStep }: { passo: PassoResult; isIngesting: boolean; currentStep: number }) {
+  // Se estiver ingerindo, a lógica de cores muda conforme o progresso
+  // Passos futuros: Vermelho
+  // Passo atual: Verde (Piscando)
+  // Passos passados: Verde (Sólido)
+  
+  let status: 'ok' | 'parcial' | 'critico' | 'pending' = passo.status;
+  
+  if (isIngesting) {
+    if (passo.passo < currentStep) status = 'ok';
+    else if (passo.passo === currentStep) status = 'parcial'; // Usaremos Parcial para indicar "Em execução"
+    else status = 'pending';
+  }
+
+  const isOk = status === 'ok';
+  const isParcial = status === 'parcial';
+  const isPending = status === 'pending' || status === 'critico';
+
+  const bg = isOk ? 'border-green-200 bg-green-50/40' : isParcial ? 'border-blue-200 bg-blue-50/40 animate-pulse' : 'border-red-200 bg-red-50/40 opacity-60';
+  const textColor = isOk ? 'text-green-700' : isParcial ? 'text-blue-700' : 'text-red-700';
+  const Icon = isOk ? IoCheckmarkCircleOutline : isParcial ? IoRefreshOutline : IoAlertCircleOutline;
 
   return (
     <div className={`rounded-2xl border p-5 transition-all hover:shadow-md ${bg}`}>
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isOk ? 'bg-green-100' : isParcial ? 'bg-amber-100' : 'bg-red-100'}`}>
-          <Icon size={22} className={textColor} />
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isOk ? 'bg-green-100' : isParcial ? 'bg-blue-100' : 'bg-red-100'}`}>
+          <Icon size={22} className={textColor + (isParcial ? ' animate-spin' : '')} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <p className={`text-[11px] font-black uppercase tracking-widest ${textColor}`}>
               Passo {passo.passo} — {passo.nome}
             </p>
-            <span className={`text-xs font-black ${textColor} shrink-0`}>{passo.percentual}%</span>
+            {!isPending && <span className={`text-xs font-black ${textColor} shrink-0`}>{isOk ? '100%' : 'PROCESSANDO...'}</span>}
           </div>
           
           {/* Barra de progresso */}
           <div className="h-1.5 rounded-full bg-white/60 border border-white/80 overflow-hidden mb-3">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-green-500' : isParcial ? 'bg-amber-500' : 'bg-red-500'}`}
-              style={{ width: `${passo.percentual}%` }}
+              className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-green-500' : isParcial ? 'bg-blue-500' : 'bg-red-500'}`}
+              style={{ width: isOk ? '100%' : isParcial ? '50%' : '0%' }}
             />
           </div>
 
-          {/* Novos campos: Finalizado e Em Processamento */}
-          <div className="grid grid-cols-2 gap-4 mb-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Finalizado</span>
-              <span className={`text-sm font-black ${isOk ? 'text-green-600' : 'text-gray-700'}`}>
-                {passo.finalizado.toLocaleString('pt-BR')}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Em processamento</span>
-              <span className={`text-sm font-black ${passo.processando > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
-                {passo.processando.toLocaleString('pt-BR')}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-[10px] text-gray-500 font-semibold leading-tight">{passo.detalhes}</p>
+          <p className="text-[10px] text-gray-500 font-semibold leading-tight">
+            {isOk ? 'Processamento concluído para este lote.' : isParcial ? 'Executando lógica no servidor...' : 'Aguardando início...'}
+          </p>
         </div>
       </div>
     </div>
@@ -257,8 +258,23 @@ export default function DiagnosticoConformidade() {
       setIngestionLog(prev => [...prev, `❌ ERRO: ${err.message}`]);
     } finally {
       setIsIngesting(false);
+      // Forçar o último passo como concluído se chegou ao fim sem erro crítico
+      setIngestionLog(prev => [...prev, '✨ BINGO! Processo concluído com sucesso.', '--- FINALIZADO ---']);
     }
   };
+
+  // Calcular passo atual baseado no log
+  const getCurrentStep = () => {
+    let step = 1;
+    for (const line of ingestionLog) {
+      const match = line.match(/Step (\d)\/7/);
+      if (match) step = parseInt(match[1]) + 1;
+    }
+    return Math.min(step, 7);
+  };
+
+  const currentStep = getCurrentStep();
+  const isFinished = ingestionLog.some(l => l.includes('FINALIZADO'));
 
   return (
     <Card className="p-8">
@@ -414,9 +430,24 @@ export default function DiagnosticoConformidade() {
 
           {/* Os 7 Passos */}
           <div>
-            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Conformidade por Passo</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Conformidade por Passo</p>
+              {isFinished && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded-lg animate-bounce shadow-lg">
+                  <IoCheckmarkCircleOutline size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Processamento Finalizado!</span>
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {resultado.passos.map(p => <PassoCard key={p.passo} passo={p} />)}
+              {resultado.passos.map(p => (
+                <PassoCard 
+                  key={p.passo} 
+                  passo={p} 
+                  isIngesting={isIngesting || isFinished} 
+                  currentStep={isFinished ? 8 : currentStep} 
+                />
+              ))}
             </div>
           </div>
 

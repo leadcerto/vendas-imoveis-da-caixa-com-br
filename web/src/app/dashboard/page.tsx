@@ -41,7 +41,8 @@ export default function DashboardPage() {
         // 2. Última atualização
         const { data: lastLog, error: logError } = await supabase
           .from('logs_ingestao')
-          .select('executado_em')
+          .select('data_lista')
+          .not('data_lista', 'is', null)
           .order('executado_em', { ascending: false })
           .limit(1);
 
@@ -54,7 +55,7 @@ export default function DashboardPage() {
 
         setStats({
           totalProperties: count || 0,
-          lastUpdate: lastLog?.[0]?.executado_em || null,
+          lastUpdate: lastLog?.[0]?.data_lista || null,
           activeReports: reports?.length || 0
         });
         setRecentReports(reports || []);
@@ -113,7 +114,7 @@ export default function DashboardPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Ultima Sincronização</p>
             <h3 className="text-xl font-black text-[#003870] uppercase tracking-tighter truncate">
               {loading ? '---' : stats.lastUpdate 
-                ? new Date(stats.lastUpdate).toLocaleDateString('pt-BR') 
+                ? String(stats.lastUpdate).split('T')[0].split('-').reverse().join('/')
                 : 'Nenhuma'}
             </h3>
           </Card>
@@ -148,7 +149,20 @@ export default function DashboardPage() {
                           {report.arquivo_csv || 'Processamento'}
                         </p>
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                          {new Date(report.executado_em).toLocaleString('pt-BR')}
+                          {report.data_lista ? (
+                            (() => {
+                              const [y, m, d] = String(report.data_lista).split('T')[0].split('-').slice(0, 3);
+                              return `Lista: ${d}/${m}/${y} | `;
+                            })()
+                          ) : ''}
+                          Executado: {report.executado_em ? (
+                            (() => {
+                              const [date, timePart] = String(report.executado_em).split('T');
+                              const [y, m, d] = date.split('-');
+                              const t = timePart ? timePart.split('.')[0].slice(0, 5) : '';
+                              return `${d}/${m}/${y} ${t}`;
+                            })()
+                          ) : '---'}
                         </p>
                       </div>
                     </div>

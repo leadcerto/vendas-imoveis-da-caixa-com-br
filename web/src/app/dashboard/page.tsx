@@ -3,11 +3,14 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+import nextDynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import AdminPageLayout from '@/components/layout/AdminPageLayout';
-import ImobiliariaManager from '@/components/admin/ImobiliariaManager';
-import DiagnosticoConformidade from '@/components/admin/DiagnosticoConformidade';
+
+// Usar dynamic import com ssr: false para ignorar renderização no servidor (que quebra o build do next)
+const ImobiliariaManager = nextDynamic(() => import('@/components/admin/ImobiliariaManager'), { ssr: false });
+const DiagnosticoConformidade = nextDynamic(() => import('@/components/admin/DiagnosticoConformidade'), { ssr: false });
 import { 
   IoStatsChartOutline, 
   IoDocumentTextOutline, 

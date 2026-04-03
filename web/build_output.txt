@@ -1,0 +1,52 @@
+
+> web@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+ÔÜá The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./src/app/api/diagnostico-imoveis/route.ts:85:25
+The file pattern (<dynamic> | 'python') matches 23173 files in [project]/
+  83 |       const stream = new ReadableStream({
+  84 |         async start(controller) {
+> 85 |           const child = spawn(pythonPath, [scriptPath, '--file', tempFilePath, '--yes'], {
+     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 86 |             env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 87 |           })
+     | ^^^^^^^^^^^^^
+  88 |
+  89 |           child.stdout.on('data', (data) => {
+  90 |             controller.enqueue(encoder.encode(data.toString()))
+
+Overly broad patterns can lead to build performance issues and over bundling.
+
+Import trace:
+  App Route:
+    ./src/app/api/diagnostico-imoveis/route.ts
+    ./src/app/api/diagnostico-imoveis/route.ts
+
+
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./src/app/dashboard/page.tsx:179:1
+Parsing ecmascript source code failed
+  177 |     </AdminPageLayout>
+  178 |   );
+> 179 | }
+      | ^
+  180 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import trace:
+  App Route:
+    ./src/app/dashboard/page.tsx
+    ./src/app/api/diagnostico-imoveis/route.ts
+
+
+    at <unknown> (./src/app/dashboard/page.tsx:179:1)

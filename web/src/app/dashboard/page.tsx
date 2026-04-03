@@ -163,8 +163,9 @@ export default function DashboardPage() {
             </div>
           </Card>
         </div>
+      </div>
 
-        {/* Diagnóstico de Conformidade */}
+      {/* Diagnóstico de Conformidade */}
         <section>
           <DiagnosticoConformidade />
         </section>

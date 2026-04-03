@@ -6,6 +6,9 @@ import path from 'path'
 import fs from 'fs'
 import os from 'os'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes de negócio (idênticas ao ingest_caixa_csv.py)
 // ─────────────────────────────────────────────────────────────────────────────

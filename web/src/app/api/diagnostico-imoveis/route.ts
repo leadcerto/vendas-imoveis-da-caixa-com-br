@@ -62,11 +62,18 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   const idsExcel = Array.from(new Set(aprovados.map(a => a.numero)))
   const dbItems: any[] = []
 
+  // Carregar Nomes dos Grupos e Selos para o Gráfico
+  const { data: gruposRaw } = await supabaseAdmin.from('grupos_imovel').select('id, nome')
+  const { data: selosRaw } = await supabaseAdmin.from('imovel_selo_oportunidade').select('imovel_selo_oportunidade_id, imovel_selo_oportunidade_nome')
+  
+  const mapaGrupos = new Map(gruposRaw?.map(g => [g.id, g.nome]) || [])
+  const mapaSelos = new Map(selosRaw?.map(s => [s.imovel_selo_oportunidade_id, s.imovel_selo_oportunidade_nome]) || [])
+  
   for (let i = 0; i < idsExcel.length; i += 500) {
     const batch = idsExcel.slice(i, i + 500)
     const { data, error } = await supabaseAdmin
       .from('imoveis')
-      .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque')
+      .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
       .in('imovel_caixa_numero', batch)
 
     if (error) console.error(`[DIAGNOSTICO] Erro Batch:`, error)
@@ -116,7 +123,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     arquivo: fileName,
     totalLinhasExcel: rowsLength,
     aprovadosFiltros: aprovados.length,
-    aprovadosLista: aprovados, // Retornar para persistência no cliente
+    aprovadosLista: aprovados,
     rejeitadosFiltros: {
       total: rejeitados.length,
       modalidade: resumoRejeicao.modalidade,

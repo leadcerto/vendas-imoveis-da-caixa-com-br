@@ -51,6 +51,17 @@ interface DiagnosticoResult {
     modalidadesEncontradas?: Record<string, number>;
     amostra: ItemAmostra[]
   };
+  gestao?: {
+    valorTotalEstoque: number;
+    countAtivos: number;
+    countVendidos: number;
+    distribuicaoGrupos: { nome: string; count: number }[];
+    vendasRecentes: {
+      dias30: number;
+      dias60: number;
+      dias90: number;
+    };
+  };
   novos: { total: number; amostra: ItemAmostra[] };
   divergentes: { total: number; amostra: ItemAmostra[] };
   conformes: { total: number };

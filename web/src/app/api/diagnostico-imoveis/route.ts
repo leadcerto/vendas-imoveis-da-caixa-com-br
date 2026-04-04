@@ -48,19 +48,21 @@ function findCol(headers: string[], fragments: string[]): string | null {
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
   let s = String(val).trim();
-  // Remove .0 que às vezes o pandas/excel coloca
+  
+  // Trata notação científica (ex: 1.4444e+12)
+  if (s.toLowerCase().includes('e')) {
+    const num = Number(s);
+    if (!isNaN(num)) return BigInt(Math.floor(num)).toString();
+  }
+
+  // Remove .0 que o Excel coloca em números
   if (s.endsWith('.0')) s = s.slice(0, -2);
   
-  // Trata notação científica (ex: 1.4444e13)
-  try {
-    if (s.toLowerCase().includes('e') || s.includes('.')) {
-      const num = Number(s);
-      if (!isNaN(num)) return BigInt(Math.floor(num)).toString();
-    }
-  } catch (e) {}
-
-  // Remove qualquer caractere que não seja número (evita "14.444.000...")
-  return s.replace(/[^\d]/g, '');
+  // Remove qualquer caractere que não seja número (evita "14.444.054.718-00")
+  const numeric = s.replace(/[^\d]/g, '');
+  
+  // Se parece um ID da CAIXA (geralmente 13 a 15 dígitos), retorna
+  return numeric;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,14 +118,14 @@ export async function POST(request: NextRequest) {
     if (rows.length === 0) return NextResponse.json({ erro: 'Planilha vazia.' }, { status: 400 })
 
     const headers = Object.keys(rows[0])
-    const cNumero     = findCol(headers, ['imovel', 'imóvel', 'n°', 'nº', 'numero'])
-    const cUf         = findCol(headers, ['uf', 'estado'])
-    const cCidade     = findCol(headers, ['cidade', 'município'])
+    const cNumero     = findCol(headers, ['imovel', 'imóvel', 'n°', 'nº', 'numero', 'n.'])
+    const cUf         = findCol(headers, ['uf', 'estado', 'funda'])
+    const cCidade     = findCol(headers, ['cidade', 'município', 'municipio'])
     const cBairro     = findCol(headers, ['bairro'])
-    const cPreco      = findCol(headers, ['preço de venda', 'preco', 'venda'])
-    const cAvaliacao  = findCol(headers, ['avaliação', 'preco_avaliacao'])
-    const cDesconto   = findCol(headers, ['desconto'])
-    const cModalidade = findCol(headers, ['modalidade'])
+    const cPreco      = findCol(headers, ['preço de venda', 'preco', 'venda', 'vlr_venda'])
+    const cAvaliacao  = findCol(headers, ['avaliação', 'preco_avaliacao', 'vlr_avali'])
+    const cDesconto   = findCol(headers, ['desconto', 'perc_desc'])
+    const cModalidade = findCol(headers, ['modalidade', 'tp_venda'])
 
     // ── 2. Processar e Filtrar ────────────────────────────────────────────────
     const ufsNoExcel = new Set<string>()
@@ -239,9 +241,11 @@ export async function POST(request: NextRequest) {
       scoreGeral,
       totalNoBanco: totalVendaUf,
       debug: {
-        excel_sample: aprovados.slice(0, 3).map(i => i.numero),
-        db_sample: dbItems.slice(0, 3).map(i => normalizeID(i.imovel_caixa_numero)),
-        matched: conformesCount
+        excel_sample: aprovados.slice(0, 5).map(i => i.numero),
+        db_sample: dbItems.slice(0, 5).map(i => normalizeID(i.imovel_caixa_numero)),
+        matched: conformesCount,
+        column_mapping: { cNumero, cUf, cCidade, cPreco, cDesconto, cModalidade },
+        headers: headers.slice(0, 10)
       }
     })
 

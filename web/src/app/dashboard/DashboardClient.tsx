@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import nextDynamic from 'next/dynamic';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { 
   IoStatsChartOutline, 
@@ -94,7 +95,7 @@ export default function DashboardClient() {
     <div className="flex flex-col gap-10">
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-8 group hover:border-[#005CA9]/30 transition-all">
           <div className="flex items-center justify-between mb-6">
             <div className="w-12 h-12 rounded-2xl bg-[#005CA9]/10 flex items-center justify-center text-[#005CA9]">
@@ -119,6 +120,23 @@ export default function DashboardClient() {
             {loading ? '---' : stats.activeReports}
           </h3>
         </Card>
+
+        <Link href="/dashboard/grupos" className="block">
+          <Card className="p-8 group hover:border-purple-200 border-dashed border-2 hover:bg-purple-50/30 transition-all h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                <IoLayersOutline size={24} />
+              </div>
+              <IoChevronForwardOutline className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Parâmetros de Grupos</p>
+              <h3 className="text-lg font-black text-[#003870] uppercase tracking-tighter">
+                Gerenciar Grupos
+              </h3>
+            </div>
+          </Card>
+        </Link>
 
         <Card className="p-8 group hover:border-[#005CA9]/30 transition-all">
           <div className="flex items-center justify-between mb-6">

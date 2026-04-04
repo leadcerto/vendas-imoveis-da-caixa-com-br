@@ -18,6 +18,7 @@ import { getLocalImagePath, getCorrectedCaixaUrl } from '@/lib/imageUtils';
 import { formatWhatsAppLink } from '@/lib/whatsapp';
 import { parsePropertyDescription } from '@/lib/propertyUtils';
 import { supabase } from '@/lib/supabase';
+import { useTracker } from '@/hooks/useTracker';
 
 interface PropertyDetailsProps {
   property: any;
@@ -39,6 +40,7 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
     interesse: 'MORAR'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { trackEvent } = useTracker(property.imovel_caixa_numero);
 
   useEffect(() => {
     const fetchImob = async () => {
@@ -83,6 +85,12 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
 
       if (error) throw error;
       
+      // Track conversion
+      trackEvent('form_submit', { 
+        interesse: formData.interesse,
+        imovel_id: property.imovel_caixa_numero
+      });
+
       setIsCashedIn(true);
     } catch (err) {
       console.error('Erro ao salvar lead:', err);
@@ -304,14 +312,20 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-12">
                   {imobiliaria?.imobiliaria_whatsapp_botao ? (
                     <button 
-                      onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                      onClick={() => {
+                        trackEvent('whatsapp_click', { pivo: 'botao_personalizado' });
+                        window.open(getWhatsAppLink(), '_blank');
+                      }}
                       className="group overflow-hidden rounded-3xl active:scale-95 transition-all shadow-xl shadow-orange-500/10"
                     >
                       <img src={imobiliaria.imobiliaria_whatsapp_botao} alt="WhatsApp" className="w-full h-auto" />
                     </button>
                   ) : (
                     <button 
-                      onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                      onClick={() => {
+                        trackEvent('whatsapp_click', { pivo: 'botao_padrao' });
+                        window.open(getWhatsAppLink(), '_blank');
+                      }}
                       className="group py-6 bg-[#F9B200] hover:bg-[#FF9D2E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
                     >
                       <span className="opacity-50 text-[8px]">Eu Quero</span>
@@ -320,7 +334,10 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                   )}
                   
                   <button 
-                    onClick={() => window.open(getShareLink(), '_blank')}
+                    onClick={() => {
+                      trackEvent('share_click');
+                      window.open(getShareLink(), '_blank');
+                    }}
                     className="group py-6 bg-[#005CA9] hover:bg-[#004a87] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
                   >
                     <span className="opacity-50 text-[8px]">Enviar Para</span>
@@ -328,7 +345,10 @@ export default function PropertyDetailsClient({ property, history, similar }: Pr
                   </button>
 
                   <button 
-                    onClick={() => window.open(getWhatsAppLink(), '_blank')}
+                    onClick={() => {
+                      trackEvent('whatsapp_click', { pivo: 'botao_whatsapp_verde' });
+                      window.open(getWhatsAppLink(), '_blank');
+                    }}
                     className="group py-6 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-green-500/20 active:scale-95 transition-all flex flex-col items-center gap-1"
                   >
                     <span className="opacity-50 text-[8px]">Falar com</span>

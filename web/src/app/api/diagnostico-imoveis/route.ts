@@ -47,10 +47,8 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  if (typeof val === 'number') {
-    return val.toLocaleString('fullwide', { useGrouping: false });
-  }
-  return String(val).replace(/[^\d]/g, '');
+  // Se for BIGINT ou Number, String() resolve sem formatação científica ou vírgulas
+  return String(val).trim().replace(/[^\d]/g, '');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,12 +61,18 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   const dbItems: any[] = []
   let page = 0
   const pageSize = 1000
+  let lastError: any = null
   while (true) {
     const { data, error } = await supabaseAdmin
       .from('imoveis')
       .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
       .range(page * pageSize, (page + 1) * pageSize - 1)
-    if (error) { console.error('[DIAGNOSTICO] Erro paginacao:', error); break }
+    
+    if (error) { 
+      lastError = error; 
+      console.error('[DIAGNOSTICO] Falha na query (pode ser coluna inexistente):', JSON.stringify(error));
+      break 
+    }
     if (!data || data.length === 0) break
     dbItems.push(...data)
     if (data.length < pageSize) break
@@ -84,13 +88,17 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
 
   const mapaDB = new Map(dbItems.map(i => [normalizeID(i.imovel_caixa_numero), i]))
   const numerosAprovados = new Set(aprovados.map(a => a.numero))
-
-  // ── 2. Cruzamento em memória (sem problema de tipo bigint vs string) ──
+  
+  // ── 2. Cruzamento em memória (Conforme as regras do Usuário) ──
+  // Conforme no Banco: se repete nas duas listas
+  // Novo Cadastro: só na lista Excel
+  // Fora de Venda: só no Banco (não atualizado)
+  
   let conformesCount = 0
   let novosCount = 0
   const amostraNovos: any[] = []
 
-  aprovados.forEach((item, idx) => {
+  aprovados.forEach((item) => {
     const match = mapaDB.get(item.numero)
     if (match) conformesCount++
     else {
@@ -99,7 +107,12 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     }
   })
 
+  const hoje = new Date()
+  const limite120dias = new Date(hoje.setDate(hoje.getDate() - 120))
+  
   const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
+  const foraDeVendaVencidos = foraDeVendaItens.filter(i => new Date(i.updated_at) < limite120dias).length
+  
   const totalBancoEncontrado = dbItems.length
   const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
 
@@ -135,7 +148,12 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     },
     novos: { total: novosCount, amostra: amostraNovos },
     conformes: { total: conformesCount },
-    foraDeVenda: { total: foraDeVendaItens.length, amostra: foraDeVendaItens.slice(0, 5).map(i => ({ numero: i.imovel_caixa_numero, uf: i.imovel_caixa_endereco_uf, cidade: i.imovel_caixa_endereco_cidade })) },
+    foraDeVenda: { 
+      total: foraDeVendaItens.length,
+      vencidos: foraDeVendaVencidos,
+      amostra: foraDeVendaItens.slice(0, 5).map(i => normalizeID(i.imovel_caixa_numero))
+    },
+    ultimoErroDB: lastError ? { message: lastError.message, code: lastError.code } : null,
     divergentes: { total: 0, amostra: [] },
     passos,
     scoreGeral,
@@ -186,12 +204,17 @@ export async function GET() {
     const dbItems: any[] = []
     let page = 0
     const pageSize = 1000
+    let getLastError: any = null
     while (true) {
       const { data, error } = await supabaseAdmin
         .from('imoveis')
         .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
         .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (error) { console.error('[GET DIAG] Erro:', error); break }
+      if (error) { 
+        getLastError = error; 
+        console.error('[GET DIAG] Erro (verificar colunas):', JSON.stringify(error));
+        break 
+      }
       if (!data || data.length === 0) break
       dbItems.push(...data)
       if (data.length < pageSize) break
@@ -200,8 +223,16 @@ export async function GET() {
 
     const totalBancoEncontrado = dbItems.length
     if (totalBancoEncontrado === 0) {
-      return NextResponse.json({ semDados: true, mensagem: 'Nenhum imóvel encontrado no banco de dados.' })
+      return NextResponse.json({ 
+        semDados: true, 
+        mensagem: 'Nenhum imóvel encontrado no banco de dados ou erro na query.',
+        debug: getLastError ? { message: getLastError.message, code: getLastError.code } : '0 records'
+      })
     }
+
+    const hoje = new Date()
+    const limite120dias = new Date(hoje.setDate(hoje.getDate() - 120))
+    const itensVencidos = dbItems.filter(i => new Date(i.updated_at) < limite120dias).length
 
     // Carregar Grupos
     const { data: gruposRaw } = await supabaseAdmin.from('grupos_imovel').select('id, nome')
@@ -256,7 +287,11 @@ export async function GET() {
       rejeitadosFiltros: { total: 0, modalidade: 0, desconto: 0, amostra: [] },
       novos: { total: 0, amostra: [] },
       conformes: { total: totalBancoEncontrado },
-      foraDeVenda: { total: 0, amostra: [] },
+      foraDeVenda: { 
+        total: itensVencidos, 
+        descricao: 'Itens no banco sem atualização há mais de 120 dias (prováveis vendidos)',
+        amostra: dbItems.filter(i => new Date(i.updated_at) < limite120dias).slice(0, 5).map(i => i.imovel_caixa_numero)
+      },
       divergentes: { total: 0, amostra: [] },
       passos,
       scoreGeral,

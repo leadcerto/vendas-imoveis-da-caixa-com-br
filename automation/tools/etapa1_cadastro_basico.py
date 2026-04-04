@@ -123,6 +123,12 @@ def main():
                 if not link_img or not link_img.startswith('http'):
                     print(f"⚠️ Aviso: Imóvel {numero_imovel} sem link de imagem válido.")
                 
+                # Filtro Anti-Leilão (Regra de Negócio Imóveis da Caixa)
+                modalidade = str(row.get('imovel_caixa_modalidade', '')).strip()
+                if "LEILAO" in modalidade.upper() or "LEILÃO" in modalidade.upper():
+                    print(f"🚫 Pulando imóvel {numero_imovel}: Modalidade de Leilão descartada.")
+                    continue
+
                 # Campos para o cadastro do imóvel
                 imovel_data = {
                     "imovel_caixa_numero": numero_imovel,
@@ -132,8 +138,8 @@ def main():
                     "imovel_caixa_endereco_csv": str(row.get('imovel_caixa_endereco_csv', '')).strip(),
                     "imovel_caixa_descricao_csv": str(row.get('imovel_caixa_descricao_csv', '')).strip(),
                     "imovel_caixa_link_acesso_direto": str(row.get('imovel_caixa_link_acesso_direto', '')).strip(),
-                    "imovel_caixa_descricao_tipo": str(row.get('imovel_caixa_descricao_tipo', '')).strip(),
                     "imovel_caixa_link_imagem": link_img,
+                    "imovel_caixa_descricao_tipo": str(row.get('imovel_caixa_descricao_tipo', '')).strip(),
                     "imovel_caixa_link_matricula": str(row.get('imovel_caixa_link_matricula', '')).strip(),
                     "id_uf_imovel_caixa": id_uf,
                     "id_cidade_imovel_caixa": id_cidade,

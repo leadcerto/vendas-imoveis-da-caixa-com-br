@@ -47,13 +47,13 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  // Instrução: Apenas manter os números. Sem conversão matemática.
+  // Se for um número grande (comum em IDs da CAIXA), converter evitando notação científica
+  if (typeof val === 'number') {
+    return val.toLocaleString('fullwide', { useGrouping: false });
+  }
   return String(val).replace(/[^\d]/g, '');
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/diagnostico-imoveis
-// ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // Lógica Principal de Diagnóstico
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     { passo: 4, nome: 'Scraping Site Caixa', finalizado: checkStep(i => !!i.imovel_caixa_detalhes_scraping), total: totalBancoEncontrado },
     { passo: 5, nome: 'Matrícula e Cartório', finalizado: checkStep(i => !!i.imovel_caixa_cartorio_matricula), total: totalBancoEncontrado },
     { passo: 6, nome: 'Localização (CEP)', finalizado: checkStep(i => !!i.id_cep_imovel_caixa), total: totalBancoEncontrado },
-    { passo: 7, nome: 'Imagens & Capa', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalBancoEncontrado },
+    { passo: 7, nome: 'Gestão & Relatórios', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalBancoEncontrado },
   ].map(p => ({
     ...p,
     processando: p.total ? (p.total - p.finalizado) : 0,
@@ -172,6 +172,113 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
         }
       })
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/diagnostico-imoveis — Diagnóstico automático sem Excel
+// ─────────────────────────────────────────────────────────────────────────────
+export async function GET() {
+  try {
+    // Carregar todos os imóveis do banco em lotes de 1000
+    const dbItems: any[] = []
+    let page = 0
+    const pageSize = 1000
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from('imoveis')
+        .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+      if (error) { console.error('[GET DIAG] Erro:', error); break }
+      if (!data || data.length === 0) break
+      dbItems.push(...data)
+      if (data.length < pageSize) break
+      page++
+    }
+
+    const totalBancoEncontrado = dbItems.length
+    if (totalBancoEncontrado === 0) {
+      return NextResponse.json({ semDados: true, mensagem: 'Nenhum imóvel encontrado no banco de dados.' })
+    }
+
+    // Carregar Grupos
+    const { data: gruposRaw } = await supabaseAdmin.from('grupos_imovel').select('id, nome')
+    const mapaGrupos = new Map(gruposRaw?.map(g => [g.id, g.nome]) || [])
+
+    // Carregar último log de ingestão
+    const { data: logData } = await supabaseAdmin
+      .from('logs_ingestao')
+      .select('arquivo_csv, total_lidos, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    const fileName = logData?.arquivo_csv || 'Banco de Dados (Carga Automática)'
+    const totalLinhasExcel = logData?.total_lidos || totalBancoEncontrado
+
+    const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
+
+    const passos = [
+      { passo: 1, nome: 'Filtros & Importação', finalizado: totalBancoEncontrado, total: totalBancoEncontrado },
+      { passo: 2, nome: 'SEO (Slug, Título, Hashtags)', finalizado: checkStep(i => !!(i.imovel_caixa_post_link_permanente && i.imovel_caixa_post_hashtags)), total: totalBancoEncontrado },
+      { passo: 3, nome: 'Resolução Financeira & Grupos', finalizado: checkStep(i => i.id_grupo_imovel_caixa !== null && i.id_grupo_imovel_caixa !== undefined), total: totalBancoEncontrado },
+      { passo: 4, nome: 'Scraping Site Caixa', finalizado: checkStep(i => !!i.imovel_caixa_detalhes_scraping), total: totalBancoEncontrado },
+      { passo: 5, nome: 'Matrícula e Cartório', finalizado: checkStep(i => !!i.imovel_caixa_cartorio_matricula), total: totalBancoEncontrado },
+      { passo: 6, nome: 'Localização (CEP)', finalizado: checkStep(i => !!i.id_cep_imovel_caixa), total: totalBancoEncontrado },
+      { passo: 7, nome: 'Gestão & Relatórios', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalBancoEncontrado },
+    ].map(p => ({
+      ...p,
+      processando: p.total ? (p.total - p.finalizado) : 0,
+      percentual: p.total ? Math.round((p.finalizado / p.total) * 100) : 0,
+      status: (p.total && p.finalizado / p.total >= 0.95) ? 'ok' : 'critico' as 'ok' | 'critico',
+      detalhes: ''
+    }))
+
+    const scoreGeral = Math.round(passos.reduce((acc, p) => acc + p.percentual, 0) / passos.length)
+
+    const aprovadosLista = dbItems.map(i => ({
+      numero: normalizeID(i.imovel_caixa_numero),
+      uf: i.imovel_caixa_endereco_uf || '',
+      cidade: i.imovel_caixa_endereco_cidade || '',
+      bairro: i.imovel_caixa_endereco_bairro || '',
+      preco: i.imovel_caixa_valor_venda || 0,
+      desconto: 0,
+      modalidade: 'venda online'
+    }))
+
+    return NextResponse.json({
+      arquivo: fileName,
+      totalLinhasExcel,
+      aprovadosFiltros: totalBancoEncontrado,
+      aprovadosLista,
+      rejeitadosFiltros: { total: 0, modalidade: 0, desconto: 0, amostra: [] },
+      novos: { total: 0, amostra: [] },
+      conformes: { total: totalBancoEncontrado },
+      foraDeVenda: { total: 0, amostra: [] },
+      divergentes: { total: 0, amostra: [] },
+      passos,
+      scoreGeral,
+      totalNoBanco: totalBancoEncontrado,
+      gestao: {
+        valorTotalEstoque: dbItems.reduce((acc, i) => acc + (i.imovel_caixa_valor_venda || 0), 0),
+        countAtivos: dbItems.filter(i => !i.imovel_caixa_vendido).length,
+        countVendidos: dbItems.filter(i => i.imovel_caixa_vendido).length,
+        distribuicaoGrupos: Array.from(dbItems.reduce((acc, i) => {
+          const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
+          acc.set(nome, (acc.get(nome) || 0) + 1)
+          return acc
+        }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
+        vendasRecentes: {
+          dias30: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
+          dias60: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,
+          dias90: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)).length
+        },
+        breakdownPorUF: []
+      }
+    })
+  } catch (err: any) {
+    console.error('[GET DIAG Error]:', err)
+    return NextResponse.json({ erro: err.message }, { status: 500 })
   }
 }
 

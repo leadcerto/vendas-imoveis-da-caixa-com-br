@@ -256,28 +256,30 @@ export default function DiagnosticoConformidade() {
   const logEndRef = useRef<HTMLDivElement>(null);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Persistência: Carregar do LocalStorage no Mount
+  // 1. Carregar automaticamente do banco de dados ao montar
   React.useEffect(() => {
-    const saved = localStorage.getItem('caixa_ultimo_diagnostico');
-    const savedHistory = localStorage.getItem('caixa_refresh_history');
-    if (saved) {
+    const carregarDoBanco = async () => {
+      setStatus('carregando');
+      setProgresso('Carregando diagnóstico do banco de dados...');
       try {
-        setResultado(JSON.parse(saved));
+        const res = await fetch('/api/diagnostico-imoveis');
+        const json = await res.json();
+        if (!res.ok || json.semDados) {
+          setStatus('idle');
+          return;
+        }
+        setResultado(json as DiagnosticoResult);
         setLastUpdateTime(new Date().toLocaleTimeString());
-        if (savedHistory) setRefreshHistory(JSON.parse(savedHistory));
+        setStatus('idle');
       } catch (e) {
-        console.error('Erro ao carregar persistência:', e);
+        console.error('Erro ao carregar diagnóstico automático:', e);
+        setStatus('idle');
       }
-    }
+    };
+    carregarDoBanco();
   }, []);
 
-  // 2. Persistência: Salvar no LocalStorage sempre que mudar
-  React.useEffect(() => {
-    if (resultado) {
-      localStorage.setItem('caixa_ultimo_diagnostico', JSON.stringify(resultado));
-      localStorage.setItem('caixa_refresh_history', JSON.stringify(refreshHistory));
-    }
-  }, [resultado, refreshHistory]);
+  // 2. (Removido) Persistência no LocalStorage descontinuada — dados carregados direto do banco
 
   // 3. Lógica de Refresh (JSON)
   const handleRefresh = async (isAuto = false) => {
@@ -719,7 +721,7 @@ export default function DiagnosticoConformidade() {
       {/* Rodapé de Versão */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Monitoramento de Conformidade v2.3.0-MONITOR-MODE · 2026-04-03
+          Monitoramento de Conformidade v2.4.0-AUTO-LOAD · 2026-04-04
         </p>
         <div className="flex items-center gap-2">
           <div className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>

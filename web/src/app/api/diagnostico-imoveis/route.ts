@@ -47,8 +47,26 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  // Se for BIGINT ou Number, String() resolve sem formatação científica ou vírgulas
-  return String(val).trim().replace(/[^\d]/g, '');
+  // Se for objeto vindo de Excel (XLSX), pode vir como número ou string científica
+  let s = String(val).trim().replace(/[^\d]/g, '');
+  
+  if (!s) return '';
+
+  // Se o ID for longo (13 dígitos), tentamos normalizar removendo prefixos de contrato CAIXA
+  // conhecidos e zeros à esquerda para dar match com versões curtas no banco.
+  if (s.length === 13) {
+    const prefixos = ['84444', '14444', '15555', '10211', '10542', '10811'];
+    for (const p of prefixos) {
+      if (s.startsWith(p)) {
+        s = s.substring(p.length);
+        break;
+      }
+    }
+  }
+
+  // Remove zeros à esquerda para garantir que "00003683" == "3683"
+  const normalized = s.replace(/^0+/, '');
+  return normalized || s; // Se sobrar vazio (ex: "000"), retorna a string original ou "0"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

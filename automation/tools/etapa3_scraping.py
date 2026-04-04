@@ -1,4 +1,7 @@
 import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 import os
 import re
 import json
@@ -146,85 +149,86 @@ def extract_features(description):
 def main():
     print("📥 Etapa 3 - Scraping e Enriquecimento Base")
     
-    resp_imoveis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero, imovel_caixa_link_acesso_direto, imovel_caixa_descricao_csv").eq("etapa_processamento", 2).execute()
-    
-    imoveis = resp_imoveis.data
-    if not imoveis:
-        print("✅ Nenhum imóvel pendente na Etapa 2 processamento.")
-        sys.exit(0)
-        
-    print(f"📊 Encontrados {len(imoveis)} imóveis pendentes para processar (Etapa 2 -> Etapa 3).")
-    
     sucessos = 0
     erros = 0
     
-    for imv in imoveis:
-        try:
-            imoveis_id = imv["imoveis_id"]
-            numero = imv["imovel_caixa_numero"]
-            link = imv["imovel_caixa_link_acesso_direto"]
-            desc_csv = imv.get("imovel_caixa_descricao_csv", "")
+    while True:
+        # Buscar imóveis na Etapa 2 em lotes de 100 para estabilidade
+        resp_imoveis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero, imovel_caixa_link_acesso_direto, imovel_caixa_descricao_csv").eq("etapa_processamento", 2).limit(100).execute()
+        
+        imoveis = resp_imoveis.data
+        if not imoveis:
+            break
             
-            # 1. Parsing da descrição CSV
-            features = extract_features(desc_csv)
-            condominio_valor = features.pop("_condominio", 0)
-            
-            # 2. Scraping da CAIXA
-            scraped = scrape_imovel(numero, link) or {}
-            
-            # 3. Separar atributos (Imovel vs Atualizacao)
-            pags_fields = ["imovel_caixa_pagamento_fgts", "imovel_caixa_pagamento_condominio_regra", 
-                           "imovel_caixa_pagamento_tributos", "imovel_caixa_pagamento_anotacoes"]
-                           
-            cep_extraido = scraped.pop("_cep_extraido", None)
-            
-            payload_imovel = {**features}
-            payload_imovel["etapa_processamento"] = 3
-            
-            payload_atualizacao = {
-                "imovel_caixa_pagamento_condominio": condominio_valor
-            }
-            
-            for k, v in scraped.items():
-                if v:
-                    if k in pags_fields:
-                        payload_atualizacao[k] = v
+        print(f"📦 Processando lote de {len(imoveis)} imóveis (Total acumulado: {sucessos})...")
+        
+        for imv in imoveis:
+            try:
+                imoveis_id = imv["imoveis_id"]
+                numero = imv["imovel_caixa_numero"]
+                link = imv["imovel_caixa_link_acesso_direto"]
+                desc_csv = imv.get("imovel_caixa_descricao_csv", "")
+                
+                # 1. Parsing da descrição CSV
+                features = extract_features(desc_csv)
+                condominio_valor = features.pop("_condominio", 0)
+                
+                # 2. Scraping da CAIXA
+                scraped = scrape_imovel(numero, link) or {}
+                
+                # 3. Separar atributos (Imovel vs Atualizacao)
+                pags_fields = ["imovel_caixa_pagamento_fgts", "imovel_caixa_pagamento_condominio_regra", 
+                               "imovel_caixa_pagamento_tributos", "imovel_caixa_pagamento_anotacoes"]
+                               
+                cep_extraido = scraped.pop("_cep_extraido", None)
+                
+                payload_imovel = {**features}
+                payload_imovel["etapa_processamento"] = 3
+                
+                payload_atualizacao = {
+                    "imovel_caixa_pagamento_condominio": condominio_valor
+                }
+                
+                for k, v in scraped.items():
+                    if v:
+                        if k in pags_fields:
+                            payload_atualizacao[k] = v
+                        else:
+                            payload_imovel[k] = v
+                            
+                # Resolver CEP em ceps_imovel
+                if cep_extraido:
+                    res_cep = supabase.table("ceps_imovel").select("id").eq("cep_numerico", cep_extraido).execute()
+                    if res_cep.data:
+                        payload_imovel["id_cep_imovel_caixa"] = res_cep.data[0]["id"]
                     else:
-                        payload_imovel[k] = v
-                        
-            # Resolver CEP em ceps_imovel
-            if cep_extraido:
-                res_cep = supabase.table("ceps_imovel").select("id").eq("cep_numerico", cep_extraido).execute()
-                if res_cep.data:
-                    payload_imovel["id_cep_imovel_caixa"] = res_cep.data[0]["id"]
-                else:
-                    # Tentar inserir um novo CEP basico se nao existir
-                    try:
-                        ins_cep = supabase.table("ceps_imovel").insert({"cep_numerico": cep_extraido}).execute()
-                        if ins_cep.data:
-                            payload_imovel["id_cep_imovel_caixa"] = ins_cep.data[0]["id"]
-                    except Exception as e:
-                        print(f"⚠️ Erro ao inserir novo CEP {cep_extraido}: {e}")
-                        
-            # Updates
-            supabase.table("imoveis").update(payload_imovel).eq("imoveis_id", imoveis_id).execute()
-            
-            if payload_atualizacao:
-                # Encontrar a atualização correta
-                h_res = supabase.table("atualizacoes_imovel").select("id").eq("imovel_id", imoveis_id).order("id", desc=True).limit(1).execute()
-                if h_res.data:
-                    supabase.table("atualizacoes_imovel").update(payload_atualizacao).eq("id", h_res.data[0]["id"]).execute()
-            
-            sucessos += 1
-            if sucessos % 10 == 0:
-                print(f"⏳ Processados {sucessos}/{len(imoveis)} imóveis scraped...")
+                        # Tentar inserir um novo CEP basico se nao existir
+                        try:
+                            ins_cep = supabase.table("ceps_imovel").insert({"cep_numerico": cep_extraido}).execute()
+                            if ins_cep.data:
+                                payload_imovel["id_cep_imovel_caixa"] = ins_cep.data[0]["id"]
+                        except Exception as e:
+                            print(f"⚠️ Erro ao inserir novo CEP {cep_extraido}: {e}")
+                            
+                # Updates
+                supabase.table("imoveis").update(payload_imovel).eq("imoveis_id", imoveis_id).execute()
                 
-            import random
-            time.sleep(random.uniform(2.5, 4.0)) # delay para atingir ~100 acessos em 300s
+                if payload_atualizacao:
+                    # Encontrar a atualização correta
+                    h_res = supabase.table("atualizacoes_imovel").select("id").eq("imovel_id", imoveis_id).order("id", desc=True).limit(1).execute()
+                    if h_res.data:
+                        supabase.table("atualizacoes_imovel").update(payload_atualizacao).eq("id", h_res.data[0]["id"]).execute()
                 
-        except Exception as e:
-            print(f"❌ Erro no imóvel {imv.get('imovel_caixa_numero')}: {e}")
-            erros += 1
+                sucessos += 1
+                if sucessos % 10 == 0:
+                    print(f"⏳ Processados {sucessos} imóveis scraped...")
+                    
+                import random
+                time.sleep(random.uniform(2.5, 4.0)) # delay para atingir ~100 acessos em 300s
+                    
+            except Exception as e:
+                print(f"❌ Erro no imóvel {imv.get('imovel_caixa_numero')}: {e}")
+                erros += 1
 
     print("=====================================================")
     print(f"✅ ETAPA 3 CONCLUÍDA")

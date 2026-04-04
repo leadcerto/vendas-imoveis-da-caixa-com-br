@@ -43,6 +43,7 @@ interface DiagnosticoResult {
   arquivo: string;
   totalLinhasExcel: number;
   aprovadosFiltros: number;
+  aprovadosLista: ItemAmostra[]; // Adicionado para persistência e refresh
   rejeitadosFiltros: { 
     total: number; 
     modalidade: number; 
@@ -74,30 +75,58 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-function PassoCard({ passo, isIngesting, currentStep }: { passo: PassoResult; isIngesting: boolean; currentStep: number }) {
-  // Se estiver ingerindo, a lógica de cores muda conforme o progresso
-  // Passos futuros: Vermelho
-  // Passo atual: Verde (Piscando)
-  // Passos passados: Verde (Sólido)
-  
+function formatETC(seconds: number) {
+  if (seconds <= 0 || !isFinite(seconds)) return null;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `~${h}h ${m}min`;
+  if (m > 0) return `~${m}min`;
+  return '< 1min';
+}
+
+function PassoCard({ 
+  passo, 
+  isIngesting, 
+  currentStep, 
+  history 
+}: { 
+  passo: PassoResult; 
+  isIngesting: boolean; 
+  currentStep: number;
+  history?: { t: number, c: number }[]
+}) {
   let status: 'ok' | 'parcial' | 'critico' | 'pending' = passo.status;
   
   if (isIngesting) {
     if (passo.passo < currentStep) status = 'ok';
-    else if (passo.passo === currentStep) status = 'parcial'; // Usaremos Parcial para indicar "Em execução"
+    else if (passo.passo === currentStep) status = 'parcial';
     else status = 'pending';
   }
 
   const isOk = status === 'ok';
-  const isParcial = status === 'parcial';
-  const isPending = status === 'pending' || status === 'critico';
+  const isParcial = status === 'parcial' || (passo.percentual > 0 && passo.percentual < 100);
+  const isPending = !isOk && !isParcial;
 
-  const bg = isOk ? 'border-green-200 bg-green-50/40' : isParcial ? 'border-blue-200 bg-blue-50/40 animate-pulse' : 'border-red-200 bg-red-50/40 opacity-60';
+  const bg = isOk ? 'border-green-200 bg-green-50/40' : isParcial ? 'border-blue-200 bg-blue-50/40' : 'border-red-200 bg-red-50/40 opacity-60';
   const textColor = isOk ? 'text-green-700' : isParcial ? 'text-blue-700' : 'text-red-700';
   const Icon = isOk ? IoCheckmarkCircleOutline : isParcial ? IoRefreshOutline : IoAlertCircleOutline;
 
+  // Cálculo de ETC baseado no histórico
+  let etcLabel = null;
+  if (isParcial && history && history.length >= 2) {
+    const start = history[0];
+    const end = history[history.length - 1];
+    const dt = (end.t - start.t) / 1000; // segundos
+    const dc = end.c - start.c;
+    if (dc > 0 && dt > 0) {
+      const rate = dc / dt; // itens por segundo
+      const remaining = passo.total - passo.finalizado;
+      etcLabel = formatETC(remaining / rate);
+    }
+  }
+
   return (
-    <div className={`rounded-2xl border p-5 transition-all hover:shadow-md ${bg}`}>
+    <div className={`rounded-2xl border p-5 transition-all hover:shadow-md ${bg} ${isParcial && !isIngesting ? 'ring-1 ring-blue-100' : ''}`}>
       <div className="flex items-start gap-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isOk ? 'bg-green-100' : isParcial ? 'bg-blue-100' : 'bg-red-100'}`}>
           <Icon size={22} className={textColor + (isParcial ? ' animate-spin' : '')} />
@@ -107,20 +136,29 @@ function PassoCard({ passo, isIngesting, currentStep }: { passo: PassoResult; is
             <p className={`text-[11px] font-black uppercase tracking-widest ${textColor}`}>
               Passo {passo.passo} — {passo.nome}
             </p>
-            {!isPending && <span className={`text-xs font-black ${textColor} shrink-0`}>{isOk ? '100%' : 'PROCESSANDO...'}</span>}
+            <span className={`text-xs font-black ${textColor} shrink-0`}>
+              {passo.percentual}%
+            </span>
           </div>
           
-          {/* Barra de progresso */}
           <div className="h-1.5 rounded-full bg-white/60 border border-white/80 overflow-hidden mb-3">
             <div
               className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-green-500' : isParcial ? 'bg-blue-500' : 'bg-red-500'}`}
-              style={{ width: isOk ? '100%' : isParcial ? '50%' : '0%' }}
+              style={{ width: `${passo.percentual}%` }}
             />
           </div>
 
-          <p className="text-[10px] text-gray-500 font-semibold leading-tight">
-            {isOk ? 'Processamento concluído para este lote.' : isParcial ? 'Executando lógica no servidor...' : 'Aguardando início...'}
-          </p>
+          <div className="flex justify-between items-end">
+            <p className="text-[10px] text-gray-500 font-semibold leading-tight">
+              {isOk ? 'Concluído' : isParcial ? `${passo.finalizado.toLocaleString('pt-BR')} de ${passo.total.toLocaleString('pt-BR')} itens` : 'Aguardando...'}
+            </p>
+            {etcLabel && (
+              <div className="text-right">
+                <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest">Tempo Estimado</p>
+                <p className="text-[10px] text-blue-600 font-black">{etcLabel}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -184,8 +222,88 @@ export default function DiagnosticoConformidade() {
   const [isIngesting, setIsIngesting] = useState(false);
   const [ingestionLog, setIngestionLog] = useState<string[]>([]);
   const [lastFile, setLastFile] = useState<File | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
+  const [refreshHistory, setRefreshHistory] = useState<Record<number, {t: number, c: number}[]>>({});
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 1. Persistência: Carregar do LocalStorage no Mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem('caixa_ultimo_diagnostico');
+    const savedHistory = localStorage.getItem('caixa_refresh_history');
+    if (saved) {
+      try {
+        setResultado(JSON.parse(saved));
+        setLastUpdateTime(new Date().toLocaleTimeString());
+        if (savedHistory) setRefreshHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Erro ao carregar persistência:', e);
+      }
+    }
+  }, []);
+
+  // 2. Persistência: Salvar no LocalStorage sempre que mudar
+  React.useEffect(() => {
+    if (resultado) {
+      localStorage.setItem('caixa_ultimo_diagnostico', JSON.stringify(resultado));
+      localStorage.setItem('caixa_refresh_history', JSON.stringify(refreshHistory));
+    }
+  }, [resultado, refreshHistory]);
+
+  // 3. Lógica de Refresh (JSON)
+  const handleRefresh = async (isAuto = false) => {
+    if (!resultado || !resultado.aprovadosLista) return;
+    
+    if (!isAuto) setStatus('carregando');
+    setProgresso('Atualizando status do banco (Sincronismo)...');
+
+    try {
+      const res = await fetch('/api/diagnostico-imoveis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resultado),
+      });
+
+      const json = await res.json() as DiagnosticoResult;
+      if (!res.ok) throw new Error((json as any).erro || 'Erro no refresh.');
+
+      // Atualizar Histórico de Velocidade
+      const now = Date.now();
+      setRefreshHistory(prev => {
+        const next = { ...prev };
+        json.passos.forEach(p => {
+          const h = next[p.passo] || [];
+          const newH = [...h, { t: now, c: p.finalizado }].slice(-20); // Manter as últimas 20 amostras
+          next[p.passo] = newH;
+        });
+        return next;
+      });
+
+      setResultado(json);
+      setLastUpdateTime(new Date().toLocaleTimeString());
+      setStatus('idle');
+    } catch (err: any) {
+      if (!isAuto) {
+        setMensagemErro(err.message);
+        setStatus('erro');
+      }
+    }
+  };
+
+  // 4. Temporizador de Auto-Refresh
+  React.useEffect(() => {
+    if (autoRefresh && resultado) {
+      refreshTimerRef.current = setInterval(() => {
+        handleRefresh(true);
+      }, 30000); // 30 segundos
+    } else {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    }
+    return () => { if (refreshTimerRef.current) clearInterval(refreshTimerRef.current); };
+  }, [autoRefresh, resultado]);
 
   const handleArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -213,13 +331,13 @@ export default function DiagnosticoConformidade() {
       }
 
       setResultado(json);
+      setLastUpdateTime(new Date().toLocaleTimeString());
       setStatus('idle');
     } catch (err: any) {
       setMensagemErro(err.message);
       setStatus('erro');
     }
 
-    // Limpa o input para permitir reenvio do mesmo arquivo
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -252,10 +370,9 @@ export default function DiagnosticoConformidade() {
         setIngestionLog(prev => {
           const lines = text.split('\n').filter(l => l.trim());
           const newLog = [...prev, ...lines];
-          return newLog.slice(-100); // Manter apenas as últimas 100 linhas
+          return newLog.slice(-100); 
         });
 
-        // Scroll suave para o fim do log
         setTimeout(() => {
           logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -264,12 +381,11 @@ export default function DiagnosticoConformidade() {
       setIngestionLog(prev => [...prev, `❌ ERRO: ${err.message}`]);
     } finally {
       setIsIngesting(false);
-      // Forçar o último passo como concluído se chegou ao fim sem erro crítico
       setIngestionLog(prev => [...prev, '✨ BINGO! Processo concluído com sucesso.', '--- FINALIZADO ---']);
+      handleRefresh(true); // Atualiza após ingestão
     }
   };
 
-  // Calcular passo atual baseado no log
   const getCurrentStep = () => {
     let step = 1;
     for (const line of ingestionLog) {
@@ -289,14 +405,20 @@ export default function DiagnosticoConformidade() {
         <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-500">
           <IoAnalyticsOutline size={24} />
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-xl font-bold text-[#003870] uppercase tracking-tighter">
             Diagnóstico de Conformidade
           </h2>
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">
-            Carregue o Excel da CAIXA para verificar os 7 passos de cadastramento
+            {resultado ? 'Modo Monitoramento Ativo' : 'Carregue o Excel da CAIXA para verificar os 7 passos'}
           </p>
         </div>
+        {resultado && (
+          <div className="text-right">
+             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sincronizado às</p>
+             <p className="text-sm font-black text-[#003870]">{lastUpdateTime}</p>
+          </div>
+        )}
       </div>
 
       {/* Área de Upload */}
@@ -348,21 +470,54 @@ export default function DiagnosticoConformidade() {
       {/* Resultado */}
       {resultado && (
         <div className="space-y-6">
-          {/* Botão recomeçar */}
-          <div className="flex items-center justify-between">
+          {/* Controles de Monitoramento */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl gap-4">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Arquivo analisado</p>
-              <p className="font-black text-[#003870] uppercase tracking-tighter">{resultado.arquivo}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Analisando Cache de</p>
+              <p className="font-black text-[#003870] uppercase tracking-tighter text-sm truncate max-w-[250px]">{resultado.arquivo}</p>
             </div>
-            <div className="flex items-center gap-3">
+            
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Toggle Auto-Refresh */}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <div className="relative">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only" 
+                    checked={autoRefresh} 
+                    onChange={(e) => setAutoRefresh(e.target.checked)}
+                  />
+                  <div className={`w-10 h-5 rounded-full transition-colors ${autoRefresh ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <div className={`absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${autoRefresh ? 'translate-x-5' : ''}`}></div>
+                </div>
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Auto-Refresh</span>
+              </label>
+
               <button
-                onClick={() => { setResultado(null); setStatus('idle'); setLastFile(null); setIngestionLog([]); }}
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#005CA9] transition-colors"
+                onClick={() => handleRefresh(false)}
+                disabled={status === 'carregando'}
+                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#005CA9] bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-all border border-blue-100 disabled:opacity-50"
               >
-                <IoRefreshOutline size={14} /> Analisar outro
+                <IoRefreshOutline size={14} className={status === 'carregando' ? 'animate-spin' : ''} /> Atualizar Agora
               </button>
-              
-              {!isIngesting && (
+
+              <button
+                onClick={() => { 
+                  if(confirm('Isso limpará o cache local. Deseja continuar?')) {
+                    setResultado(null); 
+                    setStatus('idle'); 
+                    setLastFile(null); 
+                    setIngestionLog([]); 
+                    setAutoRefresh(false);
+                    localStorage.removeItem('caixa_ultimo_diagnostico');
+                  }
+                }}
+                className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-500"
+              >
+                Limpar Cache
+              </button>
+
+              {!isIngesting && lastFile && (
                 <button
                   onClick={handleIngest}
                   className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-sm"
@@ -396,7 +551,6 @@ export default function DiagnosticoConformidade() {
                 <div ref={logEndRef} />
               </div>
               
-              {/* Barra de progresso visual simulada pela fase */}
               <div className="mt-4 h-1 bg-gray-900 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-purple-500 transition-all duration-500" 
@@ -450,12 +604,6 @@ export default function DiagnosticoConformidade() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Conformidade por Passo</p>
-              {isFinished && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white rounded-lg animate-bounce shadow-lg">
-                  <IoCheckmarkCircleOutline size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Processamento Finalizado!</span>
-                </div>
-              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {resultado.passos.map(p => (
@@ -464,6 +612,7 @@ export default function DiagnosticoConformidade() {
                   passo={p} 
                   isIngesting={isIngesting || isFinished} 
                   currentStep={isFinished ? 8 : currentStep} 
+                  history={refreshHistory[p.passo]}
                 />
               ))}
             </div>
@@ -471,14 +620,12 @@ export default function DiagnosticoConformidade() {
 
           {/* Seções expansíveis */}
           <div className="space-y-3">
-
-
             <SecaoAmostra
               titulo="Com Divergências de Valores"
-              total={resultado.divergentes.total}
+              total={resultado.divergentes?.total || 0}
               color="border-amber-200 bg-amber-50/30 text-amber-700"
               icon={IoWarningOutline}
-              itens={resultado.divergentes.amostra}
+              itens={resultado.divergentes?.amostra || []}
               renderItem={(item, i) => (
                 <div key={i} className="text-xs p-3 bg-white rounded-xl border border-amber-100">
                   <div className="flex justify-between mb-1">
@@ -539,28 +686,20 @@ export default function DiagnosticoConformidade() {
                   </div>
                 ))}
               </div>
-              <p className="text-[9px] text-red-400 mt-2 italic font-medium">
-                * Somente &quot;Venda Online&quot; e &quot;Venda Direta Online&quot; são aceitas pela sua regra de negócio.
-              </p>
-            </div>
-          )}
-
-          {/* legenda de filtros rejeitados */}
-          {resultado.rejeitadosFiltros.total > 0 && (
-            <div className="flex gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              <span>Rejeitados: {resultado.rejeitadosFiltros.modalidade} modalidade inválida · {resultado.rejeitadosFiltros.desconto} desconto abaixo de 30%</span>
             </div>
           )}
         </div>
       )}
-      {/* Rodapé de Versão e Controle de Cache */}
+      {/* Rodapé de Versão */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Controle de Conformidade v2.2.1-REAL-FINAL · Build 2026-04-03
+          Monitoramento de Conformidade v2.3.0-MONITOR-MODE · 2026-04-03
         </p>
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">Sistema Sincronizado</span>
+          <div className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest text-right">
+            {autoRefresh ? 'Auto-Refresh Ativo (30s)' : 'Sincronismo Manual'}
+          </span>
         </div>
       </div>
     </Card>

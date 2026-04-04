@@ -137,7 +137,41 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     divergentes: { total: 0, amostra: [] },
     passos,
     scoreGeral,
-    totalNoBanco: totalBancoEncontrado
+    totalNoBanco: totalBancoEncontrado,
+    gestao: {
+      valorTotalEstoque: dbItems.reduce((acc, i) => acc + (i.imovel_caixa_valor_venda || 0), 0),
+      countAtivos: dbItems.filter(i => !i.imovel_caixa_vendido).length,
+      countVendidos: dbItems.filter(i => i.imovel_caixa_vendido).length,
+      distribuicaoGrupos: Array.from(dbItems.reduce((acc, i) => {
+        const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
+        acc.set(nome, (acc.get(nome) || 0) + 1)
+        return acc
+      }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
+      vendasRecentes: {
+        dias30: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
+        dias60: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,
+        dias90: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)).length
+      },
+      breakdownPorUF: Array.from(new Set(dbItems.map(i => i.imovel_caixa_endereco_uf).filter(Boolean))).map(uf => {
+        const itemsUF = dbItems.filter(i => i.imovel_caixa_endereco_uf === uf)
+        return {
+          uf,
+          valorTotalEstoque: itemsUF.reduce((acc, i) => acc + (i.imovel_caixa_valor_venda || 0), 0),
+          countAtivos: itemsUF.filter(i => !i.imovel_caixa_vendido).length,
+          countVendidos: itemsUF.filter(i => i.imovel_caixa_vendido).length,
+          distribuicaoGrupos: Array.from(itemsUF.reduce((acc, i) => {
+            const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
+            acc.set(nome, (acc.get(nome) || 0) + 1)
+            return acc
+          }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
+          vendasRecentes: {
+            dias30: itemsUF.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
+            dias60: itemsUF.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,
+            dias90: itemsUF.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)).length
+          }
+        }
+      })
+    }
   }
 }
 

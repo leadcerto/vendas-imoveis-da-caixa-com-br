@@ -61,6 +61,18 @@ interface DiagnosticoResult {
       dias60: number;
       dias90: number;
     };
+    breakdownPorUF: {
+      uf: string;
+      valorTotalEstoque: number;
+      countAtivos: number;
+      countVendidos: number;
+      distribuicaoGrupos: { nome: string; count: number }[];
+      vendasRecentes: {
+        dias30: number;
+        dias60: number;
+        dias90: number;
+      };
+    }[];
   };
   novos: { total: number; amostra: ItemAmostra[] };
   divergentes: { total: number; amostra: ItemAmostra[] };
@@ -227,6 +239,9 @@ function SecaoAmostra({
 // ─── Componente Principal ─────────────────────────────────────────────────────
 export default function DiagnosticoConformidade() {
   const [resultado, setResultado] = useState<DiagnosticoResult | null>(null);
+  const [activeTab, setActiveTab] = useState<'geral' | 'novos' | 'conforme' | 'fora' | 'config'>('geral');
+  const [expandedPasso, setExpandedPasso] = useState<number | null>(null);
+  const [filtroUF, setFiltroUF] = useState<string>('all');
   const [status, setStatus] = useState<'idle' | 'carregando' | 'erro'>('idle');
   const [mensagemErro, setMensagemErro] = useState('');
   const [progresso, setProgresso] = useState('');

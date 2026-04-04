@@ -721,7 +721,7 @@ export default function DiagnosticoConformidade() {
       {/* Rodapé de Versão */}
       <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-          Monitoramento de Conformidade v2.5.8-STABLE · 2026-04-04
+          Monitoramento de Conformidade v2.6.2-STABLE · 2026-04-04
         </p>
         <div className="flex items-center gap-2">
           <div className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>

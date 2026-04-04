@@ -47,26 +47,7 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  // Se for objeto vindo de Excel (XLSX), pode vir como número ou string científica
-  let s = String(val).trim().replace(/[^\d]/g, '');
-  
-  if (!s) return '';
-
-  // Se o ID for longo (13 dígitos), tentamos normalizar removendo prefixos de contrato CAIXA
-  // conhecidos e zeros à esquerda para dar match com versões curtas no banco.
-  if (s.length === 13) {
-    const prefixos = ['84444', '14444', '15555', '10211', '10542', '10811'];
-    for (const p of prefixos) {
-      if (s.startsWith(p)) {
-        s = s.substring(p.length);
-        break;
-      }
-    }
-  }
-
-  // Remove zeros à esquerda para garantir que "00003683" == "3683"
-  const normalized = s.replace(/^0+/, '');
-  return normalized || s; // Se sobrar vazio (ex: "000"), retorna a string original ou "0"
+  return String(val).trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,13 +64,13 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   while (true) {
     const { data, error } = await supabaseAdmin
       .from('imoveis')
-      .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
+      .select('imovel_caixa_numero, imovel_caixa_post_link_permanente, id_grupo_imovel_caixa, imovel_caixa_cartorio_matricula, imovel_caixa_detalhes_scraping, etapa_processamento, imovel_caixa_post_hashtags, imovel_caixa_post_imagem_destaque, updated_at, id_cep_imovel_caixa')
       .range(page * pageSize, (page + 1) * pageSize - 1)
-    
-    if (error) { 
-      lastError = error; 
+
+    if (error) {
+      lastError = error;
       console.error('[DIAGNOSTICO] Falha na query (pode ser coluna inexistente):', JSON.stringify(error));
-      break 
+      break
     }
     if (!data || data.length === 0) break
     dbItems.push(...data)
@@ -105,19 +86,20 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   const mapaSelos = new Map(selosRaw?.map(s => [s.imovel_selo_oportunidade_id, s.imovel_selo_oportunidade_nome]) || [])
 
   const mapaDB = new Map(dbItems.map(i => [normalizeID(i.imovel_caixa_numero), i]))
-  const numerosAprovados = new Set(aprovados.map(a => a.numero))
-  
+  const numerosAprovados = new Set(aprovados.map(a => normalizeID(a.numero)))
+
   // ── 2. Cruzamento em memória (Conforme as regras do Usuário) ──
   // Conforme no Banco: se repete nas duas listas
   // Novo Cadastro: só na lista Excel
   // Fora de Venda: só no Banco (não atualizado)
-  
+
   let conformesCount = 0
   let novosCount = 0
   const amostraNovos: any[] = []
 
   aprovados.forEach((item) => {
-    const match = mapaDB.get(item.numero)
+    const idNorm = normalizeID(item.numero)
+    const match = mapaDB.get(idNorm)
     if (match) conformesCount++
     else {
       novosCount++
@@ -127,10 +109,10 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
 
   const hoje = new Date()
   const limite120dias = new Date(hoje.setDate(hoje.getDate() - 120))
-  
+
   const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
   const foraDeVendaVencidos = foraDeVendaItens.filter(i => new Date(i.updated_at) < limite120dias).length
-  
+
   const totalBancoEncontrado = dbItems.length
   const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
 
@@ -166,7 +148,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     },
     novos: { total: novosCount, amostra: amostraNovos },
     conformes: { total: conformesCount },
-    foraDeVenda: { 
+    foraDeVenda: {
       total: foraDeVendaItens.length,
       vencidos: foraDeVendaVencidos,
       amostra: foraDeVendaItens.slice(0, 5).map(i => normalizeID(i.imovel_caixa_numero))
@@ -228,10 +210,10 @@ export async function GET() {
         .from('imoveis')
         .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
         .range(page * pageSize, (page + 1) * pageSize - 1)
-      if (error) { 
-        getLastError = error; 
+      if (error) {
+        getLastError = error;
         console.error('[GET DIAG] Erro (verificar colunas):', JSON.stringify(error));
-        break 
+        break
       }
       if (!data || data.length === 0) break
       dbItems.push(...data)
@@ -241,8 +223,8 @@ export async function GET() {
 
     const totalBancoEncontrado = dbItems.length
     if (totalBancoEncontrado === 0) {
-      return NextResponse.json({ 
-        semDados: true, 
+      return NextResponse.json({
+        semDados: true,
         mensagem: 'Nenhum imóvel encontrado no banco de dados ou erro na query.',
         debug: getLastError ? { message: getLastError.message, code: getLastError.code } : '0 records'
       })
@@ -305,10 +287,10 @@ export async function GET() {
       rejeitadosFiltros: { total: 0, modalidade: 0, desconto: 0, amostra: [] },
       novos: { total: 0, amostra: [] },
       conformes: { total: totalBancoEncontrado },
-      foraDeVenda: { 
-        total: itensVencidos, 
+      foraDeVenda: {
+        total: itensVencidos,
         descricao: 'Itens no banco sem atualização há mais de 120 dias (prováveis vendidos)',
-        amostra: dbItems.filter(i => new Date(i.updated_at) < limite120dias).slice(0, 5).map(i => i.imovel_caixa_numero)
+        amostra: dbItems.filter(i => new Date(i.updated_at) < limite120dias).slice(0, 5).map(i => normalizeID(i.imovel_caixa_numero))
       },
       divergentes: { total: 0, amostra: [] },
       passos,

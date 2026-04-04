@@ -39,6 +39,15 @@ def parse_financiamento(texto) -> bool:
     txt = str(texto).strip().lower()
     return txt == 'sim' or txt == 'true' or txt == '1'
 
+def normalize_caixa_id(id_val):
+    """
+    Normalização literal: apenas converte para string e remove espaços.
+    Conforme instrução: o campo já vem limpo.
+    """
+    if id_val is None:
+        return ""
+    return str(id_val).strip()
+
 def main():
     if len(sys.argv) < 2:
         print("Uso: python etapa1_cadastro_basico.py <caminho_para_excel>")
@@ -105,8 +114,16 @@ def main():
         
         for idx, row in batch_df.iterrows():
             try:
-                numero_imovel = int(row.get('imovel_caixa_numero', 0))
-                if numero_imovel == 0: continue
+                # Normalização Inteligente de ID (Fix v2.5.8)
+                val_raw = row.get('imovel_caixa_numero', 0)
+                numero_original = int(re.sub(r'[^\d]', '', str(val_raw))) if str(val_raw).strip() else 0
+                numero_normalizado = normalize_caixa_id(val_raw)
+                
+                if numero_normalizado == 0: continue
+                
+                # Usamos o normalizado para o match interno, mas guardamos o original se for maior
+                # Estratégia: se o ID for 13 dígitos, ele é mais 'completo' que o ID curto.
+                numero_final = numero_original if len(str(numero_original)) >= 13 else numero_normalizado
                 
                 uf_raw = str(row.get('imovel_caixa_endereco_uf', '')).strip()
                 cidade_raw = str(row.get('imovel_caixa_endereco_cidade', '')).strip()
@@ -156,13 +173,42 @@ def main():
             
         try:
             # 1. Identificar quais imóveis já existem para fazer o "Smart Upsert"
-            lista_numeros = [item["imovel_caixa_numero"] for item in lote_imoveis]
-            res_exis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero").in_("imovel_caixa_numero", lista_numeros).execute()
-            existentes = {int(p["imovel_caixa_numero"]): p["imoveis_id"] for p in res_exis.data}
+            # Buscamos tanto pelo número "completo" quanto pelo "normalizado/curto"
+            lista_buscas = []
+            for item in lote_imoveis:
+                lista_buscas.append(item["imovel_caixa_numero"])
+                # Se for longo, adicionamos a versão curta na busca também
+                short_v = normalize_caixa_id(item["imovel_caixa_numero"])
+                if short_v != item["imovel_caixa_numero"]:
+                    lista_buscas.append(short_v)
+
+            res_exis = supabase.table("imoveis").select("imoveis_id, imovel_caixa_numero")\
+                .in_("imovel_caixa_numero", list(set(lista_buscas))).execute()
+            
+            # Mapeamento do que já existe (normalizamos as chaves do mapa do DB para match fácil)
+            existentes = {}
+            for p in res_exis.data:
+                db_num_long = int(p["imovel_caixa_numero"])
+                db_num_short = normalize_caixa_id(db_num_long)
+                # O mapa guarda o ID interno (PK)
+                existentes[db_num_long] = p["imoveis_id"]
+                existentes[db_num_short] = p["imoveis_id"]
             
             # Separar novos de existentes (Smart Match)
-            novos_imoveis = [i for i in lote_imoveis if i["imovel_caixa_numero"] not in existentes]
-            ids_existentes = [existentes[i["imovel_caixa_numero"]] for i in lote_imoveis if i["imovel_caixa_numero"] in existentes]
+            novos_imoveis = []
+            ids_existentes = []
+            
+            for i in lote_imoveis:
+                num = i["imovel_caixa_numero"]
+                num_short = normalize_caixa_id(num)
+                
+                # Check match (seja pelo longo ou pelo curto)
+                match_id = existentes.get(num) or existentes.get(num_short)
+                
+                if match_id:
+                    ids_existentes.append(match_id)
+                else:
+                    novos_imoveis.append(i)
 
             count_novos += len(novos_imoveis)
             count_conformes += len(ids_existentes)

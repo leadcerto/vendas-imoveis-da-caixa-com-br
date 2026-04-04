@@ -47,7 +47,6 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  // Se for um número grande (comum em IDs da CAIXA), converter evitando notação científica
   if (typeof val === 'number') {
     return val.toLocaleString('fullwide', { useGrouping: false });
   }
@@ -55,11 +54,12 @@ function normalizeID(val: any): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Carregar todos os imóveis do DB via paginação
-// FIX CRÍTICO: .in() com strings contra coluna bigint retorna 0 resultados no Supabase
-// Solução: carregar TODOS os itens e cruzar em memória
+// Lógica Principal de Diagnóstico
+// FIX v2.5.1: Carrega TODOS os imóveis do banco via paginação em vez de
+// usar .in() com strings contra coluna bigint (que retornava 0 resultados)
 // ─────────────────────────────────────────────────────────────────────────────
-async function carregarTodosImoveis(): Promise<any[]> {
+async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoRejeicao: any, rowsLength: number, fileName: string) {
+  // Carregar TODOS os imóveis do banco via paginação
   const dbItems: any[] = []
   let page = 0
   const pageSize = 1000
@@ -68,35 +68,29 @@ async function carregarTodosImoveis(): Promise<any[]> {
       .from('imoveis')
       .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
       .range(page * pageSize, (page + 1) * pageSize - 1)
-    if (error) { console.error(`[DIAGNOSTICO] Erro paginação p${page}:`, error); break }
+    if (error) { console.error('[DIAGNOSTICO] Erro paginacao:', error); break }
     if (!data || data.length === 0) break
     dbItems.push(...data)
     if (data.length < pageSize) break
     page++
   }
-  return dbItems
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lógica Principal de Diagnóstico
-// ─────────────────────────────────────────────────────────────────────────────
-async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoRejeicao: any, rowsLength: number, fileName: string) {
-  // Carregar TODOS os itens do banco (cruzamento em memória, evita type mismatch bigint vs string)
-  const dbItems = await carregarTodosImoveis()
-
-  // Carregar Nomes dos Grupos
+  // Carregar Nomes dos Grupos e Selos para o Gráfico
   const { data: gruposRaw } = await supabaseAdmin.from('grupos_imovel').select('id, nome')
+  const { data: selosRaw } = await supabaseAdmin.from('imovel_selo_oportunidade').select('imovel_selo_oportunidade_id, imovel_selo_oportunidade_nome')
+
   const mapaGrupos = new Map(gruposRaw?.map(g => [g.id, g.nome]) || [])
+  const mapaSelos = new Map(selosRaw?.map(s => [s.imovel_selo_oportunidade_id, s.imovel_selo_oportunidade_nome]) || [])
 
-  // Cruzamento em memória
-  const numerosExcelSet = new Set(aprovados.map(a => a.numero))
   const mapaDB = new Map(dbItems.map(i => [normalizeID(i.imovel_caixa_numero), i]))
+  const numerosAprovados = new Set(aprovados.map(a => a.numero))
 
+  // ── 2. Cruzamento em memória (sem problema de tipo bigint vs string) ──
   let conformesCount = 0
   let novosCount = 0
   const amostraNovos: any[] = []
 
-  aprovados.forEach(item => {
+  aprovados.forEach((item, idx) => {
     const match = mapaDB.get(item.numero)
     if (match) conformesCount++
     else {
@@ -105,7 +99,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     }
   })
 
-  const foraDeVendaItens = dbItems.filter(i => !numerosExcelSet.has(normalizeID(i.imovel_caixa_numero)))
+  const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
   const totalBancoEncontrado = dbItems.length
   const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
 
@@ -154,7 +148,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
         const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
         acc.set(nome, (acc.get(nome) || 0) + 1)
         return acc
-      }, new Map<string, number>()).entries()).map(([nome, count]) => ({ nome, count })),
+      }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
       vendasRecentes: {
         dias30: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
         dias60: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,
@@ -171,7 +165,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
             const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
             acc.set(nome, (acc.get(nome) || 0) + 1)
             return acc
-          }, new Map<string, number>()).entries()).map(([nome, count]) => ({ nome, count })),
+          }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
           vendasRecentes: {
             dias30: itemsUF.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
             dias60: itemsUF.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,
@@ -188,7 +182,21 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
 // ─────────────────────────────────────────────────────────────────────────────
 export async function GET() {
   try {
-    const dbItems = await carregarTodosImoveis()
+    // Carregar todos os imóveis do banco em lotes de 1000
+    const dbItems: any[] = []
+    let page = 0
+    const pageSize = 1000
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from('imoveis')
+        .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque, imovel_caixa_link_imagem, imovel_caixa_valor_venda, imovel_caixa_vendido')
+        .range(page * pageSize, (page + 1) * pageSize - 1)
+      if (error) { console.error('[GET DIAG] Erro:', error); break }
+      if (!data || data.length === 0) break
+      dbItems.push(...data)
+      if (data.length < pageSize) break
+      page++
+    }
 
     const totalBancoEncontrado = dbItems.length
     if (totalBancoEncontrado === 0) {
@@ -261,7 +269,7 @@ export async function GET() {
           const nome = mapaGrupos.get(i.id_grupo_imovel_caixa) || 'Sem Grupo'
           acc.set(nome, (acc.get(nome) || 0) + 1)
           return acc
-        }, new Map<string, number>()).entries()).map(([nome, count]) => ({ nome, count })),
+        }, new Map<string, number>()) as Map<string, number>).map(([nome, count]) => ({ nome, count })),
         vendasRecentes: {
           dias30: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length,
           dias60: dbItems.filter(i => i.imovel_caixa_vendido && new Date(i.updated_at) > new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)).length,

@@ -44,12 +44,12 @@ interface DiagnosticoResult {
   totalLinhasExcel: number;
   aprovadosFiltros: number;
   aprovadosLista: ItemAmostra[]; // Adicionado para persistência e refresh
-  rejeitadosFiltros: { 
-    total: number; 
-    modalidade: number; 
-    desconto: number; 
+  rejeitadosFiltros: {
+    total: number;
+    modalidade: number;
+    desconto: number;
     modalidadesEncontradas?: Record<string, number>;
-    amostra: ItemAmostra[] 
+    amostra: ItemAmostra[]
   };
   novos: { total: number; amostra: ItemAmostra[] };
   divergentes: { total: number; amostra: ItemAmostra[] };
@@ -84,19 +84,19 @@ function formatETC(seconds: number) {
   return '< 1min';
 }
 
-function PassoCard({ 
-  passo, 
-  isIngesting, 
-  currentStep, 
-  history 
-}: { 
-  passo: PassoResult; 
-  isIngesting: boolean; 
+function PassoCard({
+  passo,
+  isIngesting,
+  currentStep,
+  history
+}: {
+  passo: PassoResult;
+  isIngesting: boolean;
   currentStep: number;
   history?: { t: number, c: number }[]
 }) {
   let status: 'ok' | 'parcial' | 'critico' | 'pending' = passo.status;
-  
+
   if (isIngesting) {
     if (passo.passo < currentStep) status = 'ok';
     else if (passo.passo === currentStep) status = 'parcial';
@@ -140,7 +140,7 @@ function PassoCard({
               {passo.percentual}%
             </span>
           </div>
-          
+
           <div className="h-1.5 rounded-full bg-white/60 border border-white/80 overflow-hidden mb-3">
             <div
               className={`h-full rounded-full transition-all duration-700 ${isOk ? 'bg-green-500' : isParcial ? 'bg-blue-500' : 'bg-red-500'}`}
@@ -224,8 +224,8 @@ export default function DiagnosticoConformidade() {
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
-  const [refreshHistory, setRefreshHistory] = useState<Record<number, {t: number, c: number}[]>>({});
-  
+  const [refreshHistory, setRefreshHistory] = useState<Record<number, { t: number, c: number }[]>>({});
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -256,7 +256,7 @@ export default function DiagnosticoConformidade() {
   // 3. Lógica de Refresh (JSON)
   const handleRefresh = async (isAuto = false) => {
     if (!resultado || !resultado.aprovadosLista) return;
-    
+
     if (!isAuto) setStatus('carregando');
     setProgresso('Atualizando status do banco (Sincronismo)...');
 
@@ -346,7 +346,7 @@ export default function DiagnosticoConformidade() {
 
     setIsIngesting(true);
     setIngestionLog(['Iniciando processo de ingestão...']);
-    
+
     try {
       const formData = new FormData();
       formData.append('arquivo', lastFile);
@@ -365,12 +365,12 @@ export default function DiagnosticoConformidade() {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         const text = decoder.decode(value);
         setIngestionLog(prev => {
           const lines = text.split('\n').filter(l => l.trim());
           const newLog = [...prev, ...lines];
-          return newLog.slice(-100); 
+          return newLog.slice(-100);
         });
 
         setTimeout(() => {
@@ -415,8 +415,8 @@ export default function DiagnosticoConformidade() {
         </div>
         {resultado && (
           <div className="text-right">
-             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sincronizado às</p>
-             <p className="text-sm font-black text-[#003870]">{lastUpdateTime}</p>
+            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sincronizado às</p>
+            <p className="text-sm font-black text-[#003870]">{lastUpdateTime}</p>
           </div>
         )}
       </div>
@@ -476,15 +476,15 @@ export default function DiagnosticoConformidade() {
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Analisando Cache de</p>
               <p className="font-black text-[#003870] uppercase tracking-tighter text-sm truncate max-w-[250px]">{resultado.arquivo}</p>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-4">
               {/* Toggle Auto-Refresh */}
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only" 
-                    checked={autoRefresh} 
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={autoRefresh}
                     onChange={(e) => setAutoRefresh(e.target.checked)}
                   />
                   <div className={`w-10 h-5 rounded-full transition-colors ${autoRefresh ? 'bg-green-500' : 'bg-gray-300'}`}></div>
@@ -502,12 +502,12 @@ export default function DiagnosticoConformidade() {
               </button>
 
               <button
-                onClick={() => { 
-                  if(confirm('Isso limpará o cache local. Deseja continuar?')) {
-                    setResultado(null); 
-                    setStatus('idle'); 
-                    setLastFile(null); 
-                    setIngestionLog([]); 
+                onClick={() => {
+                  if (confirm('Isso limpará o cache local. Deseja continuar?')) {
+                    setResultado(null);
+                    setStatus('idle');
+                    setLastFile(null);
+                    setIngestionLog([]);
                     setAutoRefresh(false);
                     localStorage.removeItem('caixa_ultimo_diagnostico');
                   }
@@ -550,15 +550,15 @@ export default function DiagnosticoConformidade() {
                 })}
                 <div ref={logEndRef} />
               </div>
-              
+
               <div className="mt-4 h-1 bg-gray-900 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-purple-500 transition-all duration-500" 
-                  style={{ 
-                    width: isIngesting 
-                      ? `${(ingestionLog.filter(l => l.includes('Step')).length / 7) * 100}%` 
-                      : ingestionLog.some(l => l.includes('FINALIZADO')) ? '100%' : '0%' 
-                  }} 
+                <div
+                  className="h-full bg-purple-500 transition-all duration-500"
+                  style={{
+                    width: isIngesting
+                      ? `${(ingestionLog.filter(l => l.includes('Step')).length / 7) * 100}%`
+                      : ingestionLog.some(l => l.includes('FINALIZADO')) ? '100%' : '0%'
+                  }}
                 />
               </div>
             </div>
@@ -607,11 +607,11 @@ export default function DiagnosticoConformidade() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {resultado.passos.map(p => (
-                <PassoCard 
-                  key={p.passo} 
-                  passo={p} 
-                  isIngesting={isIngesting || isFinished} 
-                  currentStep={isFinished ? 8 : currentStep} 
+                <PassoCard
+                  key={p.passo}
+                  passo={p}
+                  isIngesting={isIngesting || isFinished}
+                  currentStep={isFinished ? 8 : currentStep}
                   history={refreshHistory[p.passo]}
                 />
               ))}
@@ -669,8 +669,8 @@ export default function DiagnosticoConformidade() {
               )}
             >
               <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-[10px] text-blue-700 font-bold">
-                 ℹ️ Estes imóveis estão no seu banco de dados mas NÃO constam nesta nova lista da CAIXA. 
-                 Se eles permanecerem ausentes por mais de 120 dias, o sistema os removerá automaticamente.
+                ℹ️ Estes imóveis estão no seu banco de dados mas NÃO constam nesta nova lista da CAIXA.
+                Se eles permanecerem ausentes por mais de 120 dias, o sistema os removerá automaticamente.
               </div>
             </SecaoAmostra>
           </div>

@@ -61,14 +61,14 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   // ── 1. Carregar IDs do DB em lotes ──
   const idsExcel = Array.from(new Set(aprovados.map(a => a.numero)))
   const dbItems: any[] = []
-  
+
   for (let i = 0; i < idsExcel.length; i += 500) {
     const batch = idsExcel.slice(i, i + 500)
     const { data, error } = await supabaseAdmin
       .from('imoveis')
       .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque')
       .in('imovel_caixa_numero', batch)
-    
+
     if (error) console.error(`[DIAGNOSTICO] Erro Batch:`, error)
     if (data) dbItems.push(...data)
   }
@@ -93,7 +93,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
   const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
   const totalBancoEncontrado = dbItems.length
   const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
-  
+
   const passos = [
     { passo: 1, nome: 'Filtros & Importação', finalizado: conformesCount, total: aprovados.length },
     { passo: 2, nome: 'SEO (Slug, Título, Hashtags)', finalizado: checkStep(i => !!(i.imovel_caixa_post_link_permanente && i.imovel_caixa_post_hashtags)), total: totalBancoEncontrado },
@@ -127,7 +127,7 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
     novos: { total: novosCount, amostra: amostraNovos },
     conformes: { total: conformesCount },
     foraDeVenda: { total: foraDeVendaItens.length, amostra: foraDeVendaItens.slice(0, 5).map(i => ({ numero: i.imovel_caixa_numero, uf: i.imovel_caixa_endereco_uf, cidade: i.imovel_caixa_endereco_cidade })) },
-    divergentes: { total: 0, amostra: [] }, 
+    divergentes: { total: 0, amostra: [] },
     passos,
     scoreGeral,
     totalNoBanco: totalBancoEncontrado
@@ -140,15 +140,15 @@ async function processarDiagnostico(aprovados: any[], rejeitados: any[], resumoR
 export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
-    
+
     // --- MODO REFRESH (JSON) ---
     if (contentType.includes('application/json')) {
       const body = await request.json()
       if (!body.aprovadosLista) return NextResponse.json({ erro: 'Lista de aprovação ausente.' }, { status: 400 })
-      
+
       const diag = await processarDiagnostico(
-        body.aprovadosLista, 
-        body.rejeitadosFiltros?.amostra || [], 
+        body.aprovadosLista,
+        body.rejeitadosFiltros?.amostra || [],
         body.rejeitadosFiltros || { modalidade: 0, desconto: 0 },
         body.totalLinhasExcel || body.aprovadosLista.length,
         body.arquivo || 'Refresh Automático'
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
           child.on('close', (code) => {
             controller.enqueue(encoder.encode(`\n--- PROCESSO FINALIZADO (SNC: ${code}) ---`))
             controller.close()
-            try { fs.unlinkSync(tempFilePath) } catch (e) {}
+            try { fs.unlinkSync(tempFilePath) } catch (e) { }
           })
         }
       })
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
       const modalidade = String(row[cModalidade || ''] || '').trim()
       const descontoRaw = parseBrl(row[cDesconto || ''])
       const desconto = (descontoRaw > 0 && descontoRaw < 1) ? descontoRaw * 100 : descontoRaw
-      
+
       const item = { numero, uf: String(row[cUf || ''] || '').trim().toUpperCase(), cidade: String(row[cCidade || ''] || '').trim(), bairro: String(row[cBairro || ''] || '').trim(), preco: parseBrl(row[cPreco || '']), desconto, modalidade }
       if (!MODALIDADES_ACEITAS.includes(modalidade.toLowerCase())) {
         resumoRejeicao.modalidade++; resumoRejeicao.modalidadesEncontradas[modalidade] = (resumoRejeicao.modalidadesEncontradas[modalidade] || 0) + 1; rejeitados.push(item)

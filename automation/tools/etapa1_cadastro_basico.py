@@ -118,6 +118,11 @@ def main():
                 if uf_raw: ufs_processadas_set.add(uf_raw.strip().upper())
                 numeros_processados_set.add(numero_imovel)
                 
+                # Validação de Imagem (Passo 1 marketing)
+                link_img = str(row.get('imovel_caixa_link_imagem', '')).strip()
+                if not link_img or not link_img.startswith('http'):
+                    print(f"⚠️ Aviso: Imóvel {numero_imovel} sem link de imagem válido.")
+                
                 # Campos para o cadastro do imóvel
                 imovel_data = {
                     "imovel_caixa_numero": numero_imovel,
@@ -128,7 +133,7 @@ def main():
                     "imovel_caixa_descricao_csv": str(row.get('imovel_caixa_descricao_csv', '')).strip(),
                     "imovel_caixa_link_acesso_direto": str(row.get('imovel_caixa_link_acesso_direto', '')).strip(),
                     "imovel_caixa_descricao_tipo": str(row.get('imovel_caixa_descricao_tipo', '')).strip(),
-                    "imovel_caixa_link_imagem": str(row.get('imovel_caixa_link_imagem', '')).strip(),
+                    "imovel_caixa_link_imagem": link_img,
                     "imovel_caixa_link_matricula": str(row.get('imovel_caixa_link_matricula', '')).strip(),
                     "id_uf_imovel_caixa": id_uf,
                     "id_cidade_imovel_caixa": id_cidade,
@@ -138,6 +143,7 @@ def main():
                 lote_imoveis.append(imovel_data)
                 lote_financeiro_raw.append(row)
             except Exception as e:
+                print(f"❌ Erro ao processar linha {idx}: {e}")
                 erros += 1
                 
         if not lote_imoveis: continue

@@ -14,7 +14,7 @@ export const revalidate = 0
 // ─────────────────────────────────────────────────────────────────────────────
 const DESCONTO_MINIMO = 30.0
 const MODALIDADES_ACEITAS = [
-  'venda online', 
+  'venda online',
   'venda direta online'
 ]
 
@@ -47,22 +47,8 @@ function findCol(headers: string[], fragments: string[]): string | null {
 
 function normalizeID(val: any): string {
   if (val === null || val === undefined) return '';
-  let s = String(val).trim();
-  
-  // Trata notação científica (ex: 1.4444e+12)
-  if (s.toLowerCase().includes('e')) {
-    const num = Number(s);
-    if (!isNaN(num)) return BigInt(Math.floor(num)).toString();
-  }
-
-  // Remove .0 que o Excel coloca em números
-  if (s.endsWith('.0')) s = s.slice(0, -2);
-  
-  // Remove qualquer caractere que não seja número (evita "14.444.054.718-00")
-  const numeric = s.replace(/[^\d]/g, '');
-  
-  // Se parece um ID da CAIXA (geralmente 13 a 15 dígitos), retorna
-  return numeric;
+  // Instrução: Apenas manter os números. Sem conversão matemática.
+  return String(val).replace(/[^\d]/g, '');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,17 +104,18 @@ export async function POST(request: NextRequest) {
     if (rows.length === 0) return NextResponse.json({ erro: 'Planilha vazia.' }, { status: 400 })
 
     const headers = Object.keys(rows[0])
-    const cNumero     = findCol(headers, ['imovel', 'imóvel', 'n°', 'nº', 'numero', 'n.'])
-    const cUf         = findCol(headers, ['uf', 'estado', 'funda'])
-    const cCidade     = findCol(headers, ['cidade', 'município', 'municipio'])
-    const cBairro     = findCol(headers, ['bairro'])
-    const cPreco      = findCol(headers, ['preço de venda', 'preco', 'venda', 'vlr_venda'])
-    const cAvaliacao  = findCol(headers, ['avaliação', 'preco_avaliacao', 'vlr_avali'])
-    const cDesconto   = findCol(headers, ['desconto', 'perc_desc'])
-    const cModalidade = findCol(headers, ['modalidade', 'tp_venda'])
+    // Foco Exclusivo no imovel_caixa_numero
+    const cNumero     = findCol(headers, ['imovel_caixa_numero', 'imóvel', 'n°', 'nº', 'numero'])
+    // Outras colunas para lógica de filtros APROVADOS/REJEITADOS
+    const cUf         = findCol(headers, ['imovel_caixa_endereco_uf', 'uf', 'estado'])
+    const cCidade     = findCol(headers, ['imovel_caixa_endereco_cidade', 'cidade', 'município'])
+    const cBairro     = findCol(headers, ['imovel_caixa_endereco_bairro', 'bairro'])
+    const cPreco      = findCol(headers, ['imovel_caixa_valor_venda', 'preço', 'venda', 'vlr_venda'])
+    const cAvaliacao  = findCol(headers, ['imovel_caixa_valor_avaliacao', 'avaliação', 'vlr_avali'])
+    const cDesconto   = findCol(headers, ['imovel_caixa_valor_desconto_percentual', 'desconto', 'perc_desc'])
+    const cModalidade = findCol(headers, ['imovel_caixa_modalidade', 'modalidade', 'tp_venda'])
 
-    // ── 2. Processar e Filtrar ────────────────────────────────────────────────
-    const ufsNoExcel = new Set<string>()
+    // ── 2. Processar e Filtrar (Apenas lógica de negócio) ───────────────────────
     const aprovados: any[] = []
     const rejeitados: any[] = []
     const resumoRejeicao = { modalidade: 0, desconto: 0, modalidadesEncontradas: {} as Record<string, number> }
@@ -137,22 +124,19 @@ export async function POST(request: NextRequest) {
       const numero = normalizeID(row[cNumero || ''])
       if (!numero) return
 
-      const uf = String(row[cUf || ''] || '').trim().toUpperCase()
       const modalidade = String(row[cModalidade || ''] || '').trim()
       const descontoRaw = parseBrl(row[cDesconto || ''])
       const desconto = (descontoRaw > 0 && descontoRaw < 1) ? descontoRaw * 100 : descontoRaw
       
       const item = {
         numero,
-        uf,
+        uf: String(row[cUf || ''] || '').trim().toUpperCase(),
         cidade: String(row[cCidade || ''] || '').trim(),
         bairro: String(row[cBairro || ''] || '').trim(),
         preco: parseBrl(row[cPreco || '']),
         desconto,
         modalidade
       }
-
-      if (uf) ufsNoExcel.add(uf)
 
       const modValida = MODALIDADES_ACEITAS.includes(modalidade.toLowerCase())
       const descValido = desconto >= DESCONTO_MINIMO
@@ -169,16 +153,25 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // ── 3. Carregar DB (Apenas para as UFs do Excel) ──────────────────────────
-    let dbItems: any[] = []
-    const ufsArray = Array.from(ufsNoExcel)
-    if (ufsArray.length > 0) {
-      const { data } = await supabaseAdmin
+    // ── 3. Carregar IDs do DB (EXCLUSIVAMENTE POR imovel_caixa_numero EM LOTES DE 500) ──
+    const idsExcel = Array.from(new Set(aprovados.map(a => a.numero)))
+    console.log(`[DIAGNOSTICO] Total IDs Únicos Excel: ${idsExcel.length}`)
+
+    const dbItems: any[] = []
+    for (let i = 0; i < idsExcel.length; i += 500) {
+      const batch = idsExcel.slice(i, i + 500)
+      console.log(`[DIAGNOSTICO] Buscando Lote ${i/500 + 1}... (${batch.length} IDs)`)
+      
+      const { data, error } = await supabaseAdmin
         .from('imoveis')
         .select('imovel_caixa_numero, imovel_caixa_endereco_uf, imovel_caixa_endereco_cidade, imovel_caixa_endereco_bairro, updated_at, imovel_caixa_post_link_permanente, imovel_caixa_post_titulo, imovel_caixa_post_hashtags, imovel_caixa_detalhes_scraping, imovel_caixa_cartorio_matricula, id_cep_imovel_caixa, id_grupo_imovel_caixa, imovel_caixa_post_imagem_destaque')
-        .in('imovel_caixa_endereco_uf', ufsArray)
-      if (data) dbItems = data
+        .in('imovel_caixa_numero', batch)
+      
+      if (error) console.error(`[DIAGNOSTICO] Erro Batch ${i/500 + 1}:`, error)
+      if (data) dbItems.push(...data)
     }
+
+    console.log(`[DIAGNOSTICO] Total de Correspondências encontradas no Banco: ${dbItems.length}`)
 
     const mapaDB = new Map(dbItems.map(i => [normalizeID(i.imovel_caixa_numero), i]))
     const numerosAprovados = new Set(aprovados.map(a => a.numero))
@@ -188,30 +181,32 @@ export async function POST(request: NextRequest) {
     let novosCount = 0
     const amostraNovos: any[] = []
 
-    aprovados.forEach(item => {
-      if (mapaDB.has(item.numero)) {
+    aprovados.forEach((item, idx) => {
+      const match = mapaDB.get(item.numero)
+      if (match) {
         conformesCount++
       } else {
         novosCount++
         if (amostraNovos.length < 10) amostraNovos.push(item)
+        if (idx < 2) console.log(`[DEBUG] SEM MATCH PARA ID NO BANCO: ${item.numero}`)
       }
     })
 
-    // ── 5. Fora de Venda (DB - Aprovados) ────────────────────────────────────
+    // ── 5. Fora de Venda (Imóveis no DB que NÃO vieram na lista Excel analisada) ─
     const foraDeVendaItens = dbItems.filter(i => !numerosAprovados.has(normalizeID(i.imovel_caixa_numero)))
     
-    // ── 6. Diagnóstico dos 7 passos (Média do Banco para as UFs analisadas) ───
-    const totalVendaUf = dbItems.length
+    // ── 6. Diagnóstico dos 7 passos (Média do Banco para os itens encontrados) ──
+    const totalBancoEncontrado = dbItems.length
     const checkStep = (fn: (i: any) => boolean) => dbItems.filter(fn).length
     
     const passos = [
       { passo: 1, nome: 'Filtros & Importação', finalizado: conformesCount, processando: novosCount, total: aprovados.length },
-      { passo: 2, nome: 'SEO (Slug, Título, Hashtags)', finalizado: checkStep(i => !!(i.imovel_caixa_post_link_permanente && i.imovel_caixa_post_hashtags)), total: totalVendaUf },
-      { passo: 3, nome: 'Resolução Financeira & Grupos', finalizado: checkStep(i => !!i.id_grupo_imovel_caixa), total: totalVendaUf },
-      { passo: 4, nome: 'Scraping Site Caixa', finalizado: checkStep(i => !!i.imovel_caixa_detalhes_scraping), total: totalVendaUf },
-      { passo: 5, nome: 'Matrícula e Cartório', finalizado: checkStep(i => !!i.imovel_caixa_cartorio_matricula), total: totalVendaUf },
-      { passo: 6, nome: 'Localização (CEP)', finalizado: checkStep(i => !!i.id_cep_imovel_caixa), total: totalVendaUf },
-      { passo: 7, nome: 'Imagens & Capa', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalVendaUf },
+      { passo: 2, nome: 'SEO (Slug, Título, Hashtags)', finalizado: checkStep(i => !!(i.imovel_caixa_post_link_permanente && i.imovel_caixa_post_hashtags)), total: totalBancoEncontrado },
+      { passo: 3, nome: 'Resolução Financeira & Grupos', finalizado: checkStep(i => !!i.id_grupo_imovel_caixa), total: totalBancoEncontrado },
+      { passo: 4, nome: 'Scraping Site Caixa', finalizado: checkStep(i => !!i.imovel_caixa_detalhes_scraping), total: totalBancoEncontrado },
+      { passo: 5, nome: 'Matrícula e Cartório', finalizado: checkStep(i => !!i.imovel_caixa_cartorio_matricula), total: totalBancoEncontrado },
+      { passo: 6, nome: 'Localização (CEP)', finalizado: checkStep(i => !!i.id_cep_imovel_caixa), total: totalBancoEncontrado },
+      { passo: 7, nome: 'Imagens & Capa', finalizado: checkStep(i => !!i.imovel_caixa_post_imagem_destaque), total: totalBancoEncontrado },
     ].map(p => ({
       ...p,
       processando: p.total ? (p.total - p.finalizado) : 0,
@@ -236,10 +231,10 @@ export async function POST(request: NextRequest) {
       novos: { total: novosCount, amostra: amostraNovos },
       conformes: { total: conformesCount },
       foraDeVenda: { total: foraDeVendaItens.length, amostra: foraDeVendaItens.slice(0, 5).map(i => ({ numero: i.imovel_caixa_numero, uf: i.imovel_caixa_endereco_uf, cidade: i.imovel_caixa_endereco_cidade })) },
-      divergentes: { total: 0, amostra: [] }, // Reservado para checks de preço divergente depois
+      divergentes: { total: 0, amostra: [] }, 
       passos,
       scoreGeral,
-      totalNoBanco: totalVendaUf,
+      totalNoBanco: totalBancoEncontrado,
       debug: {
         excel_sample: aprovados.slice(0, 5).map(i => i.numero),
         db_sample: dbItems.slice(0, 5).map(i => normalizeID(i.imovel_caixa_numero)),
